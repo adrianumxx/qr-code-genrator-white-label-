@@ -63,7 +63,8 @@ $('signupForm').onsubmit=async e=>{
   e.preventDefault(); const m=$('suMsg'); m.className='msg'; m.textContent='Creazione account...';
   const {data,error}=await sb.auth.signUp({
     email:$('suEmail').value, password:$('suPass').value,
-    options:{ data:{ company_name:$('suCompany').value } }
+    options:{ data:{ company_name:$('suCompany').value },
+      emailRedirectTo: location.origin + location.pathname }
   });
   if(error){m.className='msg err';m.textContent=error.message;return;}
   if(data.session){ location.href='app.html'; }
