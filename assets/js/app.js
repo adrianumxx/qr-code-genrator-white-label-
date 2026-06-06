@@ -19,6 +19,10 @@ async function busy(btn, label, fn) {
   finally { btn.disabled = false; btn.textContent = prev; }
 }
 const isUrl = s => { try { new URL(/^https?:\/\//i.test(s) ? s : 'https://' + s); return true; } catch { return false; } };
+const normalizeUrl = s => {
+  const v = String(s || '').trim();
+  return v && !/^https?:\/\//i.test(v) ? 'https://' + v : v;
+};
 const isEmail = s => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 const isTel = s => /^[+]?[\d\s().-]{5,}$/.test(s);
 /* escape special chars in structured formats (WIFI/vCard) */
@@ -139,7 +143,7 @@ function fieldVal(k) { const e = document.querySelector(`#g_fields [data-k="${k}
 /* build the QR payload string from current inputs */
 function buildPayload() {
   const t = $('g_type').value;
-  if (t === 'url') return fieldVal('url');
+  if (t === 'url') return normalizeUrl(fieldVal('url'));
   if (t === 'file') return FILE_URL || '';
   if (t === 'text') return fieldVal('text');
   if (t === 'email') return `mailto:${fieldVal('email')}?subject=${encodeURIComponent(fieldVal('subject'))}&body=${encodeURIComponent(fieldVal('body'))}`;
@@ -301,7 +305,7 @@ function downloadSavedQR(q) {
       <button class="btn-ghost" data-ext="svg">SVG</button>
       <button class="btn-ghost" data-ext="pdf">PDF</button>
     </div>
-    <button id="sv_share" style="width:100%;margin-top:10px">↗ Share (PNG)</button>
+    <button id="sv_share" style="width:100%;margin-top:10px">Share PNG</button>
     <div style="margin-top:14px;text-align:right"><button class="btn-ghost" onclick="closeModal()">Close</button></div>`);
   const design = () => ({ ...(q.design || {}), transparent: $('sv_transparent').checked });
   document.querySelectorAll('#modalRoot [data-ext]').forEach(b =>
@@ -332,13 +336,14 @@ $('saveQrBtn').onclick = function () {
     title: $('g_title').value || 'Untitled QR', type,
     is_dynamic: dyn, design: currentDesign(),
   };
-  if (dyn) { row.short_code = randCode(); row.destination = payload; row.content = `${redirectBase()}/${row.short_code}`; }
+  if (dyn) { row.short_code = randCode(); row.destination = normalizeUrl(payload); row.content = `${redirectBase()}/${row.short_code}`; }
   else { row.content = payload; }
 
   return busy(this, 'Saving…', async () => {
     const { error } = await sb.from('qr_codes').insert(row);
     if (error) { toast(error.message, false); return; }
     toast('QR saved ✓');
+    if (dyn) loadCodes();
   });
 };
 
@@ -357,7 +362,7 @@ async function loadCodes() {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 21v.01M17 21h.01M21 17h.01"/></svg>
       <div class="empty-t">No QR codes yet</div>
       <div>Create your first branded QR code.</div>
-      <button id="emptyGen">✨ Generate your first QR</button></div>`;
+      <button id="emptyGen">Generate your first QR</button></div>`;
     $('emptyGen').onclick = () => document.querySelector('.nav[data-page="generate"]').click();
     return;
   }
@@ -371,12 +376,12 @@ async function loadCodes() {
        <span class="badge ${q.is_dynamic ? 'dyn' : 'stat'}">${q.is_dynamic ? 'Dynamic' : 'Static'}</span>
        <span class="muted" style="font-size:12px"> · ${q.type}</span>`));
     const act = el('div', 'card-actions');
-    const dlBtn = el('button', 'btn-ghost btn-sm', '⬇ Download'); dlBtn.onclick = () => downloadSavedQR(q); act.appendChild(dlBtn);
+    const dlBtn = el('button', 'btn-ghost btn-sm', 'Download'); dlBtn.onclick = () => downloadSavedQR(q); act.appendChild(dlBtn);
     if (q.is_dynamic) {
-      const aBtn = el('button', 'btn-ghost btn-sm', '📊 Analytics'); aBtn.onclick = () => showAnalytics(q); act.appendChild(aBtn);
-      const eBtn = el('button', 'btn-ghost btn-sm', '✏️ Destination'); eBtn.onclick = () => editDestination(q); act.appendChild(eBtn);
+      const aBtn = el('button', 'btn-ghost btn-sm', 'Analytics'); aBtn.onclick = () => showAnalytics(q); act.appendChild(aBtn);
+      const eBtn = el('button', 'btn-ghost btn-sm', 'Destination'); eBtn.onclick = () => editDestination(q); act.appendChild(eBtn);
     }
-    const dBtn = el('button', 'btn-danger btn-sm', '🗑'); dBtn.onclick = () => deleteQR(q.id); act.appendChild(dBtn);
+    const dBtn = el('button', 'btn-danger btn-sm', 'Delete'); dBtn.onclick = () => deleteQR(q.id); act.appendChild(dBtn);
     card.appendChild(act);
     list.appendChild(card);
   });
@@ -397,9 +402,12 @@ function editDestination(q) {
     <div class="row"><button class="btn-ghost" onclick="closeModal()">Cancel</button>
     <button id="saveDest">Save</button></div>`);
   $('saveDest').onclick = async () => {
-    const { error } = await sb.from('qr_codes').update({ destination: $('newDest').value }).eq('id', q.id);
+    const next = normalizeUrl($('newDest').value);
+    if (!isUrl(next)) { toast('Invalid URL', false); return; }
+    const { error } = await sb.from('qr_codes').update({ destination: next }).eq('id', q.id);
     if (error) return toast(error.message, false);
     closeModal(); toast('Destination updated ✓');
+    loadCodes();
   };
 }
 
@@ -438,8 +446,10 @@ $('bulkRun').onclick = () => {
       for (const row of rows) {
         i++;
         const title = row.title || row.name || ('qr_' + i);
-        let data = row.content || row.url || row.destination || '';
+        const raw = row.content || row.url || row.destination || '';
+        let data = (row.url || row.destination || dyn) ? normalizeUrl(raw) : raw;
         if (!data) continue;
+        if (dyn && !isUrl(data)) continue;
         made++;
         if (dyn) {
           const code = randCode();
