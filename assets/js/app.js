@@ -3,13 +3,26 @@ const sb = supabase.createClient(QR_CONFIG.SUPABASE_URL, QR_CONFIG.SUPABASE_ANON
 const $ = id => document.getElementById(id);
 const el = (t, c, h) => { const e = document.createElement(t); if (c) e.className = c; if (h != null) e.innerHTML = h; return e; };
 
-let STATE = { user: null, tenantId: null, branding: null, editingDynamicId: null };
+let STATE = { user: null, tenantId: null, branding: null };
 
 /* ---------- toast ---------- */
 function toast(msg, ok = true) {
   const t = el('div', 'toast', msg); t.style.borderColor = ok ? 'var(--ok)' : 'var(--danger)';
   $('toastRoot').appendChild(t); setTimeout(() => t.remove(), 2600);
 }
+
+/* ---------- helpers: anti doppio-submit + validazione ---------- */
+async function busy(btn, label, fn) {
+  if (!btn || btn.disabled) return;
+  const prev = btn.textContent; btn.disabled = true; btn.textContent = label;
+  try { return await fn(); }
+  finally { btn.disabled = false; btn.textContent = prev; }
+}
+const isUrl = s => { try { new URL(/^https?:\/\//i.test(s) ? s : 'https://' + s); return true; } catch { return false; } };
+const isEmail = s => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+const isTel = s => /^[+]?[\d\s().-]{5,}$/.test(s);
+/* escape caratteri speciali nei formati strutturati (WIFI/vCard) */
+const esc = s => String(s).replace(/([\\;,:"])/g, '\\$1');
 
 /* ---------- auth guard + bootstrap ---------- */
 async function boot() {
@@ -123,8 +136,8 @@ function buildPayload() {
   if (t === 'email') return `mailto:${fieldVal('email')}?subject=${encodeURIComponent(fieldVal('subject'))}&body=${encodeURIComponent(fieldVal('body'))}`;
   if (t === 'tel') return `tel:${fieldVal('tel')}`;
   if (t === 'sms') return `SMSTO:${fieldVal('tel')}:${fieldVal('body')}`;
-  if (t === 'wifi') return `WIFI:T:${fieldVal('enc') || 'WPA'};S:${fieldVal('ssid')};P:${fieldVal('password')};;`;
-  if (t === 'vcard') return `BEGIN:VCARD\nVERSION:3.0\nFN:${fieldVal('fn')}\nORG:${fieldVal('org')}\nTEL:${fieldVal('phone')}\nEMAIL:${fieldVal('vemail')}\nURL:${fieldVal('vurl')}\nEND:VCARD`;
+  if (t === 'wifi') return `WIFI:T:${fieldVal('enc') || 'WPA'};S:${esc(fieldVal('ssid'))};P:${esc(fieldVal('password'))};;`;
+  if (t === 'vcard') return `BEGIN:VCARD\nVERSION:3.0\nFN:${esc(fieldVal('fn'))}\nORG:${esc(fieldVal('org'))}\nTEL:${fieldVal('phone')}\nEMAIL:${fieldVal('vemail')}\nURL:${fieldVal('vurl')}\nEND:VCARD`;
   if (t === 'event') return `BEGIN:VEVENT\nSUMMARY:${fieldVal('summary')}\nLOCATION:${fieldVal('location')}\nDTSTART:${fieldVal('start')}\nDTEND:${fieldVal('end')}\nEND:VEVENT`;
   return '';
 }
@@ -180,8 +193,9 @@ function refreshQR() {
   // placeholder quando non c'è contenuto
   if (!payload && !dyn) {
     qrPreview = null;
-    stage.innerHTML = `<div style="color:#9aa1b2;font-size:13px;padding:60px 10px;max-width:200px;margin:auto">
-      Inserisci un contenuto per generare l'anteprima del QR</div>`;
+    stage.innerHTML = `<div class="qr-empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 21v.01M17 21h.01M21 17h.01"/></svg>
+      Inserisci un contenuto per vedere l'anteprima del tuo QR</div>`;
     return;
   }
   const data = dyn ? `${redirectBase()}/PREVIEW` : payload;
@@ -225,12 +239,16 @@ function randCode(n = 7) {
   for (let i = 0; i < n; i++) s += a[arr[i] % a.length]; return s;
 }
 
-$('saveQrBtn').onclick = async () => {
+$('saveQrBtn').onclick = function () {
   const type = $('g_type').value;
   const dyn = $('g_dynamic').checked && isDynable(type);
   const payload = buildPayload();
   if (type === 'file' && !FILE_URL) { toast('Carica prima un file', false); return; }
   if (!payload) { toast('Inserisci un contenuto', false); return; }
+  // validazione runtime per i tipi che lo richiedono
+  if ((type === 'url' || (type === 'file' && dyn)) && !isUrl(payload)) { toast('URL non valida', false); return; }
+  if (type === 'email' && !isEmail(fieldVal('email'))) { toast('Email non valida', false); return; }
+  if ((type === 'tel' || type === 'sms') && !isTel(fieldVal('tel'))) { toast('Numero non valido', false); return; }
 
   const row = {
     tenant_id: STATE.tenantId, created_by: STATE.user.id,
@@ -240,17 +258,32 @@ $('saveQrBtn').onclick = async () => {
   if (dyn) { row.short_code = randCode(); row.destination = payload; row.content = `${redirectBase()}/${row.short_code}`; }
   else { row.content = payload; }
 
-  const { error } = await sb.from('qr_codes').insert(row);
-  if (error) { toast(error.message, false); return; }
-  toast('QR salvato ✓');
+  return busy(this, 'Salvataggio…', async () => {
+    const { error } = await sb.from('qr_codes').insert(row);
+    if (error) { toast(error.message, false); return; }
+    toast('QR salvato ✓');
+  });
 };
 
 /* ===================== CODES LIST ===================== */
 async function loadCodes() {
-  const { data, error } = await sb.from('qr_codes').select('*').order('created_at', { ascending: false });
   const list = $('codesList');
-  if (error) { list.innerHTML = `<div class="empty">${error.message}</div>`; return; }
-  if (!data.length) { list.innerHTML = `<div class="empty">Nessun QR ancora. Vai su <b>Genera</b>.</div>`; return; }
+  // skeleton shimmer durante il fetch (mai spinner)
+  list.innerHTML = Array.from({ length: 6 }, () => '<div class="skeleton sk-card"></div>').join('');
+  const { data, error } = await sb.from('qr_codes').select('*').order('created_at', { ascending: false });
+  if (error) {
+    list.innerHTML = `<div class="empty"><div class="empty-t">Errore di caricamento</div>
+      <div>${escapeHtml(error.message)}</div></div>`; return;
+  }
+  if (!data.length) {
+    list.innerHTML = `<div class="empty" style="grid-column:1/-1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 21v.01M17 21h.01M21 17h.01"/></svg>
+      <div class="empty-t">Nessun QR, per ora</div>
+      <div>Crea il tuo primo QR code brandizzato.</div>
+      <button id="emptyGen">✨ Genera il primo QR</button></div>`;
+    $('emptyGen').onclick = () => document.querySelector('.nav[data-page="generate"]').click();
+    return;
+  }
   list.innerHTML = '';
   data.forEach(q => {
     const card = el('div', 'card');
@@ -311,11 +344,16 @@ async function showAnalytics(q) {
 
 /* ===================== BULK CSV ===================== */
 $('bulkRun').onclick = () => {
+  const btn = $('bulkRun');
   const f = $('bulkFile').files[0]; const m = $('bulkMsg');
   if (!f) { m.className = 'msg err'; m.textContent = 'Seleziona un CSV'; return; }
+  const done = (cls, txt) => { m.className = 'msg ' + cls; m.textContent = txt; btn.disabled = false; btn.textContent = 'Genera ZIP'; };
+  btn.disabled = true; btn.textContent = 'Elaborazione…';
   m.className = 'msg'; m.textContent = 'Elaborazione...';
   Papa.parse(f, {
-    header: true, skipEmptyLines: true, complete: async res => {
+    header: true, skipEmptyLines: true,
+    error: err => done('err', 'CSV illeggibile: ' + err.message),
+    complete: async res => {
       const rows = res.data; const zip = new JSZip(); const dyn = $('bulkDynamic').checked;
       const d = currentDesign(); const toInsert = [];
       let i = 0, made = 0;
@@ -334,10 +372,12 @@ $('bulkRun').onclick = () => {
         const blob = await new QRCodeStyling(qrOptions(data, d, 600)).getRawData('png');
         zip.file(`${title.replace(/[^\w\-]+/g, '_')}.png`, blob);
       }
-      if (dyn && toInsert.length) { const { error } = await sb.from('qr_codes').insert(toInsert); if (error) { m.className = 'msg err'; m.textContent = error.message; return; } }
+      if (!made) { done('err', 'Nessuna riga valida: servono colonne title e content/url/destination.'); return; }
+      if (dyn && toInsert.length) { const { error } = await sb.from('qr_codes').insert(toInsert); if (error) { done('err', error.message); return; } }
       const content = await zip.generateAsync({ type: 'blob' });
-      const a = document.createElement('a'); a.href = URL.createObjectURL(content); a.download = 'qr_bulk.zip'; a.click();
-      m.className = 'msg ok'; m.textContent = `Generati ${made} QR ✓`;
+      const stamp = new Date().toISOString().slice(0, 10);
+      const a = document.createElement('a'); a.href = URL.createObjectURL(content); a.download = `qr_bulk_${stamp}.zip`; a.click();
+      done('ok', `Generati ${made} QR ✓${i > made ? ` · ${i - made} righe saltate` : ''}`);
     }
   });
 };
@@ -358,7 +398,7 @@ $('b_logo').onchange = e => {
   if (B_LOGO_FILE) { const r = new FileReader(); r.onload = () => $('b_logo_prev').innerHTML = `<img src="${r.result}" style="max-height:60px;border-radius:8px;background:#fff;padding:6px">`; r.readAsDataURL(B_LOGO_FILE); }
 };
 
-$('saveBranding').onclick = async () => {
+$('saveBranding').onclick = function () { return busy(this, 'Salvataggio…', async () => {
   const m = $('brandMsg'); m.className = 'msg'; m.textContent = 'Salvataggio...';
   let logo_url = STATE.branding.logo_url || null;
   if (B_LOGO_FILE) {
@@ -374,9 +414,9 @@ $('saveBranding').onclick = async () => {
   };
   const { error } = await sb.from('branding').upsert(payload, { onConflict: 'tenant_id' });
   if (error) { m.className = 'msg err'; m.textContent = error.message; return; }
-  STATE.branding = payload; $('tenantName').textContent = payload.company_name || 'La tua azienda';
+  STATE.branding = { ...STATE.branding, ...payload }; $('tenantName').textContent = payload.company_name || 'La tua azienda';
   m.className = 'msg ok'; m.textContent = 'Branding salvato ✓';
-};
+}); };
 
 /* ===================== CUSTOM DOMAIN ===================== */
 function renderDomain() {
@@ -406,18 +446,20 @@ async function callDomains(action, domain) {
   return data;
 }
 
-$('dom_add').onclick = async () => {
+$('dom_add').onclick = function () {
   const m = $('domMsg'); const host = $('dom_input').value.trim();
   if (!host) { m.className = 'msg err'; m.textContent = 'Inserisci un dominio'; return; }
   m.className = 'msg'; m.textContent = 'Collegamento...';
+  return busy(this, 'Collegamento…', async () => {
   try {
     const r = await callDomains('add', host);
     STATE.branding.custom_domain = r.hostname; STATE.branding.domain_status = 'pending';
     renderDomain(); m.className = 'msg ok'; m.textContent = 'Dominio collegato. Aggiungi il CNAME e premi Verifica.';
   } catch (e) { m.className = 'msg err'; m.textContent = e.message; }
+  });
 };
 
-$('dom_verify').onclick = async () => {
+$('dom_verify').onclick = function () { return busy(this, 'Verifica…', async () => {
   const m = $('domMsg'); m.className = 'msg'; m.textContent = 'Verifica...';
   try {
     const r = await callDomains('status');
@@ -425,16 +467,18 @@ $('dom_verify').onclick = async () => {
     if (r.status === 'active') { m.className = 'msg ok'; m.textContent = 'Dominio attivo ✓ I nuovi QR dinamici useranno il tuo dominio.'; }
     else { m.className = 'msg'; m.textContent = 'Ancora in attesa: il DNS può richiedere qualche minuto. Riprova tra poco.'; }
   } catch (e) { m.className = 'msg err'; m.textContent = e.message; }
-};
+}); };
 
-$('dom_remove').onclick = async () => {
+$('dom_remove').onclick = async function () {
   if (!await confirmModal('Rimuovere il dominio custom?', { ok: 'Rimuovi' })) return;
   const m = $('domMsg'); m.className = 'msg'; m.textContent = 'Rimozione...';
+  return busy(this, 'Rimozione…', async () => {
   try {
     await callDomains('remove');
     STATE.branding.custom_domain = null; STATE.branding.domain_status = 'none';
     renderDomain(); m.className = 'msg ok'; m.textContent = 'Dominio rimosso.';
   } catch (e) { m.className = 'msg err'; m.textContent = e.message; }
+  });
 };
 
 /* ---------- modal helpers ---------- */
