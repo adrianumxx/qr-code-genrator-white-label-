@@ -19,7 +19,7 @@
 
 - [x] **B1 🟠 Sidebar premium.** Sostituire le emoji con icone SVG (inline, stroke 1.5). Stato active con gradient sottile + barra accent a sinistra, hover con transizione. *DoD: nav senza emoji, stati chiari.*
 - [ ] **B2 🟠 Header pagina + breadcrumb.** Topbar sticky con glassmorphism, titolo pagina + sottotitolo, avatar/azienda a destra. *DoD: header coerente su tutte le sezioni.*
-- [ ] **B3 🟢 Sidebar responsive.** Mobile: hamburger → drawer animato (translateX + overlay), non il flex-wrap attuale. *DoD: navigazione usabile a 375px.*
+- [x] **B3 🟢 Sidebar responsive.** Mobile: hamburger → drawer animato (translateX + overlay), non il flex-wrap attuale. *DoD: navigazione usabile a 375px.*
 - [ ] **B4 🟢 Scroll reveal.** IntersectionObserver + classe `.reveal` con stagger sui pannelli below-the-fold. Rispettare `prefers-reduced-motion`. *DoD: ingresso animato dei pannelli.*
 
 ## TRACCIA C — Schermata Genera (il cuore)

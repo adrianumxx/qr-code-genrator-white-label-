@@ -53,6 +53,14 @@ function redirectBase() {
 
 $('logoutBtn').onclick = async () => { await sb.auth.signOut(); location.href = 'index.html'; };
 
+/* ---------- mobile drawer ---------- */
+function setDrawer(open) {
+  $('side').classList.toggle('open', open);
+  $('overlay').classList.toggle('show', open);
+}
+$('menuBtn').onclick = () => setDrawer(!$('side').classList.contains('open'));
+$('overlay').onclick = () => setDrawer(false);
+
 /* ---------- navigation ---------- */
 document.querySelectorAll('.nav').forEach(n => n.onclick = () => {
   document.querySelectorAll('.nav').forEach(x => x.classList.remove('active'));
@@ -61,6 +69,7 @@ document.querySelectorAll('.nav').forEach(n => n.onclick = () => {
   ['generate', 'codes', 'bulk', 'branding'].forEach(pg =>
     $('page-' + pg).classList.toggle('hidden', pg !== p));
   if (p === 'codes') loadCodes();
+  setDrawer(false); // chiudi il drawer dopo la scelta su mobile
 });
 
 /* ===================== CONTENT TYPE FIELDS ===================== */

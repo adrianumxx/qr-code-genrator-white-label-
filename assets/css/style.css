@@ -156,5 +156,40 @@ label{font-size:13px;color:var(--muted);display:block;margin:0 0 6px;font-weight
   padding:14px 18px;border-radius:var(--radius);z-index:99;box-shadow:var(--shadow-lg);
   border-left:3px solid var(--brand);animation:toastIn .35s var(--ease-spring)}
 @keyframes toastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
-@media(max-width:900px){.app{grid-template-columns:1fr}.side{flex-direction:row;flex-wrap:wrap;
-  position:sticky;top:0;z-index:10}.side-foot{display:none}.grid2{grid-template-columns:1fr}}
+/* ===== mobile-first: topbar + drawer (nascosti su desktop) ===== */
+.mobile-bar{display:none}
+.overlay{display:none}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;
+  padding:0;background:var(--panel2);border:1px solid var(--line);box-shadow:none}
+.icon-btn svg{width:22px;height:22px}
+.icon-btn:hover{transform:none;filter:none;box-shadow:none;border-color:var(--line-hover)}
+
+@media(max-width:860px){
+  .mobile-bar{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:12px;
+    padding:10px 14px;background:rgba(10,10,15,.85);backdrop-filter:blur(14px) saturate(1.4);
+    border-bottom:1px solid var(--line)}
+  .app{grid-template-columns:1fr;min-height:auto}
+  /* sidebar come drawer off-canvas */
+  .side{position:fixed;top:0;left:0;bottom:0;width:264px;max-width:84vw;z-index:60;
+    transform:translateX(-100%);transition:transform var(--dur) var(--ease-out);
+    box-shadow:var(--shadow-lg)}
+  .side.open{transform:translateX(0)}
+  .side .brand{display:none}
+  .overlay{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.5);
+    opacity:0;pointer-events:none;transition:opacity var(--dur) var(--ease-out)}
+  .overlay.show{display:block;opacity:1;pointer-events:auto}
+  .nav.active::before{left:-12px}
+  .main{padding:20px 16px;max-height:none}
+  .page-title{font-size:26px}
+  .page-sub{margin-bottom:20px}
+  .grid2{grid-template-columns:1fr;gap:16px}
+  .preview{position:static}
+  .qr-stage{display:block;width:100%}
+  .qr-stage canvas,.qr-stage svg{margin:0 auto}
+  .row{flex-direction:column;gap:0}
+  .stat-grid{grid-template-columns:1fr;gap:10px}
+  .cards{grid-template-columns:1fr;gap:14px}
+  .panel{padding:18px}
+  .modal{padding:20px;border-radius:var(--radius)}
+  .toast{left:16px;right:16px;bottom:16px}
+}
