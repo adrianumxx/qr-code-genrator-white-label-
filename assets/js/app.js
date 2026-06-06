@@ -235,13 +235,16 @@ function currentQRData() {
   return dyn ? `${redirectBase()}/PREVIEW` : payload;
 }
 
-/* save a blob: on mobile use the Web Share API (Save to Files/Photos menu),
-   otherwise classic anchor download */
-async function saveBlob(blob, filename, mime) {
-  const file = new File([blob], filename, { type: mime });
-  if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    try { await navigator.share({ files: [file], title: filename }); return; }
-    catch (e) { if (e && e.name === 'AbortError') return; /* cancelled: ok */ }
+/* save a blob.
+   mode 'download' = direct file download (anchor)
+   mode 'share'    = native share sheet (mobile); falls back to download if unsupported */
+async function saveBlob(blob, filename, mime, mode = 'download') {
+  if (mode === 'share') {
+    const file = new File([blob], filename, { type: mime });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: filename }); return; }
+      catch (e) { if (e && e.name === 'AbortError') return; /* cancelled: ok */ }
+    } else { toast('Sharing not available — downloading instead'); }
   }
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = filename;
@@ -250,7 +253,7 @@ async function saveBlob(blob, filename, mime) {
 }
 
 /* reusable export: works for both the preview and saved QR codes */
-async function downloadQR(data, design, title, ext, size = 1024) {
+async function downloadQR(data, design, title, ext, size = 1024, mode = 'download') {
   if (!data) { toast('Nothing to download', false); return; }
   const name = (title || 'qr').replace(/[^\w\-]+/g, '_');
   const isVec = ext === 'svg';
@@ -261,22 +264,23 @@ async function downloadQR(data, design, title, ext, size = 1024) {
       const url = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(png); });
       const { jsPDF } = window.jspdf; const pdf = new jsPDF();
       pdf.addImage(url, 'PNG', 60, 60, 90, 90);
-      await saveBlob(pdf.output('blob'), name + '.pdf', 'application/pdf');
+      await saveBlob(pdf.output('blob'), name + '.pdf', 'application/pdf', mode);
     } else {
       const blob = await inst.getRawData(ext);
-      await saveBlob(blob, `${name}.${ext}`, isVec ? 'image/svg+xml' : 'image/png');
+      await saveBlob(blob, `${name}.${ext}`, isVec ? 'image/svg+xml' : 'image/png', mode);
     }
   } catch (e) { toast('Export error: ' + (e.message || e), false); }
 }
 
-function exportQR(ext) {
+function exportQR(ext, mode = 'download') {
   const data = currentQRData();
   if (!data) { toast('Enter content before downloading', false); return; }
-  return downloadQR(data, currentDesign(), $('g_title').value, ext, +$('dl_size').value);
+  return downloadQR(data, currentDesign(), $('g_title').value, ext, +$('dl_size').value, mode);
 }
-$('dlPng').onclick = () => exportQR('png');
-$('dlSvg').onclick = () => exportQR('svg');
-$('dlPdf').onclick = () => exportQR('pdf');
+$('dlPng').onclick = () => exportQR('png', 'download');
+$('dlSvg').onclick = () => exportQR('svg', 'download');
+$('dlPdf').onclick = () => exportQR('pdf', 'download');
+$('shareBtn').onclick = () => exportQR('png', 'share');
 
 /* download menu for a saved QR (format + size + transparency) */
 function downloadSavedQR(q) {
@@ -291,18 +295,18 @@ function downloadSavedQR(q) {
         <input type="checkbox" id="sv_transparent" style="width:auto"><span>Transparent background (PNG/SVG)</span>
       </label>
     </div>
-    <div class="row" style="margin-top:6px">
+    <label style="margin-top:14px">Download</label>
+    <div class="row" style="margin-top:4px">
       <button class="btn-ghost" data-ext="png">PNG</button>
       <button class="btn-ghost" data-ext="svg">SVG</button>
       <button class="btn-ghost" data-ext="pdf">PDF</button>
     </div>
+    <button id="sv_share" style="width:100%;margin-top:10px">↗ Share (PNG)</button>
     <div style="margin-top:14px;text-align:right"><button class="btn-ghost" onclick="closeModal()">Close</button></div>`);
+  const design = () => ({ ...(q.design || {}), transparent: $('sv_transparent').checked });
   document.querySelectorAll('#modalRoot [data-ext]').forEach(b =>
-    b.onclick = () => {
-      const design = { ...(q.design || {}), transparent: $('sv_transparent').checked };
-      downloadQR(q.content, design, q.title, b.dataset.ext, +$('sv_size').value);
-      closeModal();
-    });
+    b.onclick = () => { downloadQR(q.content, design(), q.title, b.dataset.ext, +$('sv_size').value, 'download'); closeModal(); });
+  $('sv_share').onclick = () => { downloadQR(q.content, design(), q.title, 'png', +$('sv_size').value, 'share'); closeModal(); };
 }
 
 /* ===================== SAVE QR ===================== */
