@@ -45,7 +45,7 @@
     <!-- GENERATE -->
     <section id="page-generate">
       <h1 class="page-title">Generate a QR code</h1>
-      <p class="page-sub">Static (free, unlimited) or dynamic (editable + analytics).</p>
+      <p class="page-sub">Create branded static QR codes or dynamic links with editable destinations and scan analytics.</p>
       <div class="grid2">
         <div>
           <div class="panel">
@@ -129,7 +129,7 @@
           <h3>Preview</h3>
           <div class="qr-stage"><div id="qrPreview"></div></div>
           <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
-            <button id="saveQrBtn">💾 Save QR</button>
+            <button id="saveQrBtn">Save QR</button>
             <div class="field" style="margin:0">
               <label>Download size</label>
               <select id="dl_size"><option value="512">512px</option><option value="1024" selected>1024px</option><option value="2048">2048px (print)</option></select>
@@ -140,7 +140,7 @@
               <button class="btn-ghost btn-sm" id="dlSvg">SVG</button>
               <button class="btn-ghost btn-sm" id="dlPdf">PDF</button>
             </div>
-            <button class="btn-ghost btn-sm" id="shareBtn" style="width:100%">↗ Share (PNG)</button>
+            <button class="btn-ghost btn-sm" id="shareBtn" style="width:100%">Share PNG</button>
           </div>
         </div>
       </div>
@@ -155,7 +155,7 @@
     <!-- BULK -->
     <section id="page-bulk" class="hidden">
       <h1 class="page-title">Bulk generation from CSV</h1>
-      <p class="page-sub">Upload a CSV with columns <b>title,content</b> (or <b>destination</b> for dynamic). Download all QR codes in one ZIP.</p>
+      <p class="page-sub">Upload a CSV with <b>title,content</b> columns, or <b>destination</b> for dynamic QR codes. Export everything as one ZIP.</p>
       <div class="panel" style="max-width:640px">
         <div class="field"><label>CSV file</label><input type="file" id="bulkFile" accept=".csv"></div>
         <div class="field">
@@ -187,7 +187,7 @@
       </div>
 
       <div class="panel" style="max-width:640px;margin-top:20px">
-        <h3>🌐 Custom domain</h3>
+        <h3>Custom domain</h3>
         <p class="muted" style="font-size:13px;margin-top:0">
           Point your QR codes to your own domain (e.g. <b>qr.yourcompany.com</b>) instead of the default one.
           Connect the domain with a CNAME record — the HTTPS certificate is automatic.</p>
