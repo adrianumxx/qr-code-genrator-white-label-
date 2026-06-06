@@ -25,8 +25,8 @@ function parseUA(ua = '') {
 
 export default async function handler(req, res) {
   const code = req.query.code;
-  if (!code) { res.status(400).send('Codice mancante'); return; }
-  if (!SUPABASE_URL || !KEY) { res.status(500).send('Backend non configurato'); return; }
+  if (!code) { res.status(400).send('Missing code'); return; }
+  if (!SUPABASE_URL || !KEY) { res.status(500).send('Backend not configured'); return; }
 
   const headers = { apikey: KEY, Authorization: `Bearer ${KEY}` };
   const q = await fetch(
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     { headers });
   const rows = await q.json().catch(() => []);
   const qr = Array.isArray(rows) ? rows[0] : null;
-  if (!qr || !qr.destination) { res.status(404).send('QR non trovato'); return; }
+  if (!qr || !qr.destination) { res.status(404).send('QR not found'); return; }
 
   const ua = req.headers['user-agent'] || '';
   const { device, os, browser } = parseUA(ua);
