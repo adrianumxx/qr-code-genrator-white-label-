@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="it">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -13,7 +13,7 @@
 </head>
 <body>
 <div class="mobile-bar">
-  <button id="menuBtn" class="icon-btn" aria-label="Apri menu">
+  <button id="menuBtn" class="icon-btn" aria-label="Open menu">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
   </button>
   <div class="logo" style="font-size:18px">◵ QR Studio</div>
@@ -24,10 +24,10 @@
     <div class="brand logo">◵ QR Studio</div>
     <div class="nav active" data-page="generate">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3 4 7l4-1M19 21l1-4-4 1"/><path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5z"/></svg>
-      <span>Genera</span></div>
+      <span>Generate</span></div>
     <div class="nav" data-page="codes">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      <span>I miei QR</span></div>
+      <span>My QR codes</span></div>
     <div class="nav" data-page="bulk">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg>
       <span>Bulk (CSV)</span></div>
@@ -37,38 +37,38 @@
     <div class="side-foot">
       <div id="tenantName" class="muted"></div>
       <div id="userEmail" class="muted" style="margin:4px 0 10px"></div>
-      <button class="btn-ghost btn-sm" id="logoutBtn" style="width:100%">Esci</button>
+      <button class="btn-ghost btn-sm" id="logoutBtn" style="width:100%">Sign out</button>
     </div>
   </aside>
 
   <main class="main">
     <!-- GENERATE -->
     <section id="page-generate">
-      <h1 class="page-title">Genera un QR code</h1>
-      <p class="page-sub">Statico (gratis, infinito) o dinamico (modificabile + analytics).</p>
+      <h1 class="page-title">Generate a QR code</h1>
+      <p class="page-sub">Static (free, unlimited) or dynamic (editable + analytics).</p>
       <div class="grid2">
         <div>
           <div class="panel">
-            <h3>Contenuto</h3>
-            <div class="field"><label>Titolo</label><input id="g_title" placeholder="Es. Volantino estate"></div>
-            <div class="field"><label>Tipo</label>
+            <h3>Content</h3>
+            <div class="field"><label>Title</label><input id="g_title" placeholder="e.g. Summer flyer"></div>
+            <div class="field"><label>Type</label>
               <select id="g_type">
                 <option value="url">Link / URL</option>
-                <option value="file">File (PDF, immagine, ecc.)</option>
-                <option value="text">Testo</option>
+                <option value="file">File (PDF, image, etc.)</option>
+                <option value="text">Text</option>
                 <option value="email">Email</option>
-                <option value="tel">Telefono</option>
+                <option value="tel">Phone</option>
                 <option value="sms">SMS</option>
                 <option value="wifi">WiFi</option>
-                <option value="vcard">vCard (contatto)</option>
-                <option value="event">Evento calendario</option>
+                <option value="vcard">vCard (contact)</option>
+                <option value="event">Calendar event</option>
               </select>
             </div>
             <div id="g_fields"></div>
             <div class="field" style="margin-top:6px">
               <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
                 <input type="checkbox" id="g_dynamic" style="width:auto">
-                <span>QR dinamico — destinazione modificabile dopo la stampa + analytics scansioni</span>
+                <span>Dynamic QR — destination editable after printing + scan analytics</span>
               </label>
             </div>
           </div>
@@ -76,63 +76,63 @@
           <div class="panel" style="margin-top:20px">
             <h3>Design</h3>
             <div class="row">
-              <div class="field"><label>Colore moduli</label>
+              <div class="field"><label>Module color</label>
                 <div class="color-row"><input type="color" id="d_fg" value="#111111"><input type="text" id="d_fg_t" value="#111111"></div>
               </div>
-              <div class="field"><label>Sfondo</label>
+              <div class="field"><label>Background</label>
                 <div class="color-row"><input type="color" id="d_bg" value="#ffffff"><input type="text" id="d_bg_t" value="#ffffff"></div>
               </div>
             </div>
             <div class="field">
               <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
-                <input type="checkbox" id="d_transparent" style="width:auto"><span>Sfondo trasparente (PNG/SVG)</span>
+                <input type="checkbox" id="d_transparent" style="width:auto"><span>Transparent background (PNG/SVG)</span>
               </label>
             </div>
             <div class="field">
               <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
-                <input type="checkbox" id="d_gradient" style="width:auto"><span>Gradiente sui moduli</span>
+                <input type="checkbox" id="d_gradient" style="width:auto"><span>Gradient on modules</span>
               </label>
             </div>
-            <div class="field hidden" id="d_gradient_field"><label>Colore finale gradiente</label>
+            <div class="field hidden" id="d_gradient_field"><label>Gradient end color</label>
               <div class="color-row"><input type="color" id="d_fg2" value="#8b5cf6"><input type="text" id="d_fg2_t" value="#8b5cf6"></div>
             </div>
             <div class="row">
-              <div class="field"><label>Forma moduli</label>
+              <div class="field"><label>Module shape</label>
                 <select id="d_dotshape">
-                  <option value="square">Quadrati</option>
-                  <option value="rounded">Arrotondati</option>
-                  <option value="dots">Pallini</option>
+                  <option value="square">Square</option>
+                  <option value="rounded">Rounded</option>
+                  <option value="dots">Dots</option>
                   <option value="classy">Classy</option>
                   <option value="classy-rounded">Classy rounded</option>
                 </select>
               </div>
-              <div class="field"><label>Angoli</label>
+              <div class="field"><label>Corners</label>
                 <select id="d_corner">
-                  <option value="square">Quadrati</option>
-                  <option value="extra-rounded">Arrotondati</option>
-                  <option value="dot">Pallino</option>
+                  <option value="square">Square</option>
+                  <option value="extra-rounded">Rounded</option>
+                  <option value="dot">Dot</option>
                 </select>
               </div>
             </div>
             <div class="row">
-              <div class="field"><label>Correzione errori</label>
+              <div class="field"><label>Error correction</label>
                 <select id="d_ecc"><option value="L">L</option><option value="M">M</option><option value="Q" selected>Q</option><option value="H">H</option></select>
               </div>
-              <div class="field"><label>Margine</label><input type="number" id="d_margin" value="10" min="0" max="40"></div>
+              <div class="field"><label>Margin</label><input type="number" id="d_margin" value="10" min="0" max="40"></div>
             </div>
-            <div class="field"><label>Logo centrale (opzionale)</label><input type="file" id="d_logo" accept="image/*"></div>
-            <button class="btn-ghost btn-sm" id="applyBrandBtn">Applica branding aziendale</button>
+            <div class="field"><label>Center logo (optional)</label><input type="file" id="d_logo" accept="image/*"></div>
+            <button class="btn-ghost btn-sm" id="applyBrandBtn">Apply company branding</button>
           </div>
         </div>
 
         <div class="preview panel">
-          <h3>Anteprima</h3>
+          <h3>Preview</h3>
           <div class="qr-stage"><div id="qrPreview"></div></div>
           <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
-            <button id="saveQrBtn">💾 Salva QR</button>
+            <button id="saveQrBtn">💾 Save QR</button>
             <div class="field" style="margin:0">
-              <label>Dimensione download</label>
-              <select id="dl_size"><option value="512">512px</option><option value="1024" selected>1024px</option><option value="2048">2048px (stampa)</option></select>
+              <label>Download size</label>
+              <select id="dl_size"><option value="512">512px</option><option value="1024" selected>1024px</option><option value="2048">2048px (print)</option></select>
             </div>
             <div class="row">
               <button class="btn-ghost btn-sm" id="dlPng">PNG</button>
@@ -146,70 +146,70 @@
 
     <!-- CODES -->
     <section id="page-codes" class="hidden">
-      <div class="topbar"><div><h1 class="page-title">I miei QR</h1><p class="page-sub" style="margin:0">Tutti i QR della tua azienda.</p></div></div>
+      <div class="topbar"><div><h1 class="page-title">My QR codes</h1><p class="page-sub" style="margin:0">All your company's QR codes.</p></div></div>
       <div id="codesList" class="cards"></div>
     </section>
 
     <!-- BULK -->
     <section id="page-bulk" class="hidden">
-      <h1 class="page-title">Generazione bulk da CSV</h1>
-      <p class="page-sub">Carica un CSV con colonne <b>title,content</b> (o <b>destination</b> per dinamici). Scarica tutti i QR in uno ZIP.</p>
+      <h1 class="page-title">Bulk generation from CSV</h1>
+      <p class="page-sub">Upload a CSV with columns <b>title,content</b> (or <b>destination</b> for dynamic). Download all QR codes in one ZIP.</p>
       <div class="panel" style="max-width:640px">
-        <div class="field"><label>File CSV</label><input type="file" id="bulkFile" accept=".csv"></div>
+        <div class="field"><label>CSV file</label><input type="file" id="bulkFile" accept=".csv"></div>
         <div class="field">
           <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
-            <input type="checkbox" id="bulkDynamic" style="width:auto"><span>Crea QR dinamici (salva nel DB + tracking)</span>
+            <input type="checkbox" id="bulkDynamic" style="width:auto"><span>Create dynamic QR codes (save to DB + tracking)</span>
           </label>
         </div>
-        <button id="bulkRun">Genera ZIP</button>
+        <button id="bulkRun">Generate ZIP</button>
         <div class="msg" id="bulkMsg"></div>
       </div>
     </section>
 
     <!-- BRANDING -->
     <section id="page-branding" class="hidden">
-      <h1 class="page-title">Branding aziendale</h1>
-      <p class="page-sub">Imposta logo e colori: verranno applicati di default ai tuoi QR.</p>
+      <h1 class="page-title">Company branding</h1>
+      <p class="page-sub">Set your logo and colors: they'll be applied by default to your QR codes.</p>
       <div class="panel" style="max-width:640px">
-        <div class="field"><label>Nome azienda</label><input id="b_name"></div>
-        <div class="field"><label>Logo aziendale</label><input type="file" id="b_logo" accept="image/*">
+        <div class="field"><label>Company name</label><input id="b_name"></div>
+        <div class="field"><label>Company logo</label><input type="file" id="b_logo" accept="image/*">
           <div id="b_logo_prev" style="margin-top:10px"></div>
         </div>
         <div class="row">
-          <div class="field"><label>Colore primario</label><div class="color-row"><input type="color" id="b_primary" value="#111111"><input id="b_primary_t" value="#111111"></div></div>
-          <div class="field"><label>Sfondo</label><div class="color-row"><input type="color" id="b_bg" value="#ffffff"><input id="b_bg_t" value="#ffffff"></div></div>
-          <div class="field"><label>Accento</label><div class="color-row"><input type="color" id="b_accent" value="#6366f1"><input id="b_accent_t" value="#6366f1"></div></div>
+          <div class="field"><label>Primary color</label><div class="color-row"><input type="color" id="b_primary" value="#111111"><input id="b_primary_t" value="#111111"></div></div>
+          <div class="field"><label>Background</label><div class="color-row"><input type="color" id="b_bg" value="#ffffff"><input id="b_bg_t" value="#ffffff"></div></div>
+          <div class="field"><label>Accent</label><div class="color-row"><input type="color" id="b_accent" value="#6366f1"><input id="b_accent_t" value="#6366f1"></div></div>
         </div>
-        <button id="saveBranding">Salva branding</button>
+        <button id="saveBranding">Save branding</button>
         <div class="msg" id="brandMsg"></div>
       </div>
 
       <div class="panel" style="max-width:640px;margin-top:20px">
-        <h3>🌐 Dominio personalizzato</h3>
+        <h3>🌐 Custom domain</h3>
         <p class="muted" style="font-size:13px;margin-top:0">
-          Fai puntare i tuoi QR a un tuo dominio (es. <b>qr.tuazienda.it</b>) invece di quello di default.
-          Collega il dominio con un record CNAME — il certificato HTTPS è automatico.</p>
+          Point your QR codes to your own domain (e.g. <b>qr.yourcompany.com</b>) instead of the default one.
+          Connect the domain with a CNAME record — the HTTPS certificate is automatic.</p>
 
         <div id="domainNone">
-          <div class="field"><label>Il tuo dominio (sottodominio consigliato)</label>
-            <input id="dom_input" placeholder="qr.tuazienda.it"></div>
-          <button id="dom_add">Collega dominio</button>
+          <div class="field"><label>Your domain (subdomain recommended)</label>
+            <input id="dom_input" placeholder="qr.yourcompany.com"></div>
+          <button id="dom_add">Connect domain</button>
         </div>
 
         <div id="domainPending" class="hidden">
           <p style="font-size:14px"><b id="dom_host"></b>
-            <span class="badge dyn" id="dom_badge">in attesa</span></p>
-          <p class="muted" style="font-size:13px">Aggiungi questo record DNS dal pannello del tuo dominio, poi premi Verifica:</p>
+            <span class="badge dyn" id="dom_badge">pending</span></p>
+          <p class="muted" style="font-size:13px">Add this DNS record in your domain's panel, then press Verify:</p>
           <div class="panel" style="background:var(--panel2)">
             <div style="font-family:monospace;font-size:13px;line-height:1.9">
-              <div>Tipo: <b>CNAME</b></div>
-              <div>Nome: <b id="dom_name"></b></div>
-              <div>Valore: <b id="dom_target"></b></div>
+              <div>Type: <b>CNAME</b></div>
+              <div>Name: <b id="dom_name"></b></div>
+              <div>Value: <b id="dom_target"></b></div>
             </div>
           </div>
           <div class="row" style="margin-top:14px">
-            <button class="btn-ghost" id="dom_remove">Rimuovi</button>
-            <button id="dom_verify">Verifica stato</button>
+            <button class="btn-ghost" id="dom_remove">Remove</button>
+            <button id="dom_verify">Check status</button>
           </div>
         </div>
 

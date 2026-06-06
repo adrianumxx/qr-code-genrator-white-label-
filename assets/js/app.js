@@ -11,7 +11,7 @@ function toast(msg, ok = true) {
   $('toastRoot').appendChild(t); setTimeout(() => t.remove(), 2600);
 }
 
-/* ---------- helpers: anti doppio-submit + validazione ---------- */
+/* ---------- helpers: anti double-submit + validation ---------- */
 async function busy(btn, label, fn) {
   if (!btn || btn.disabled) return;
   const prev = btn.textContent; btn.disabled = true; btn.textContent = label;
@@ -21,7 +21,7 @@ async function busy(btn, label, fn) {
 const isUrl = s => { try { new URL(/^https?:\/\//i.test(s) ? s : 'https://' + s); return true; } catch { return false; } };
 const isEmail = s => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
 const isTel = s => /^[+]?[\d\s().-]{5,}$/.test(s);
-/* escape caratteri speciali nei formati strutturati (WIFI/vCard) */
+/* escape special chars in structured formats (WIFI/vCard) */
 const esc = s => String(s).replace(/([\\;,:"])/g, '\\$1');
 
 /* ---------- auth guard + bootstrap ---------- */
@@ -32,18 +32,18 @@ async function boot() {
   $('userEmail').textContent = STATE.user.email;
 
   const { data: mem } = await sb.from('memberships').select('tenant_id').limit(1).maybeSingle();
-  if (!mem) { toast('Nessuna azienda trovata', false); return; }
+  if (!mem) { toast('No company found', false); return; }
   STATE.tenantId = mem.tenant_id;
 
   const { data: br } = await sb.from('branding').select('*').eq('tenant_id', STATE.tenantId).maybeSingle();
   STATE.branding = br || {};
-  $('tenantName').textContent = (br && br.company_name) ? br.company_name : 'La tua azienda';
+  $('tenantName').textContent = (br && br.company_name) ? br.company_name : 'Your company';
   fillBrandingForm();
   renderDomain();
   renderTypeFields(); refreshQR();
 }
 
-/* base url per i link dinamici: dominio custom verificato, altrimenti dominio corrente (Vercel) */
+/* base url for dynamic links: verified custom domain, else current origin (Vercel) */
 function redirectBase() {
   const b = STATE.branding || {};
   const root = (b.custom_domain && b.domain_status === 'active')
@@ -69,23 +69,23 @@ document.querySelectorAll('.nav').forEach(n => n.onclick = () => {
   ['generate', 'codes', 'bulk', 'branding'].forEach(pg =>
     $('page-' + pg).classList.toggle('hidden', pg !== p));
   if (p === 'codes') loadCodes();
-  setDrawer(false); // chiudi il drawer dopo la scelta su mobile
+  setDrawer(false); // close the drawer after choosing on mobile
 });
 
 /* ===================== CONTENT TYPE FIELDS ===================== */
 const TYPE_FIELDS = {
   url: [['url', 'URL', 'https://...']],
   file: [],
-  text: [['text', 'Testo', 'Scrivi qui...']],
-  email: [['email', 'Email', 'nome@dominio.it'], ['subject', 'Oggetto', ''], ['body', 'Messaggio', '']],
-  tel: [['tel', 'Numero', '+39...']],
-  sms: [['tel', 'Numero', '+39...'], ['body', 'Messaggio', '']],
-  wifi: [['ssid', 'Nome rete (SSID)', ''], ['password', 'Password', ''], ['enc', 'Sicurezza (WPA/WEP/nopass)', 'WPA']],
-  vcard: [['fn', 'Nome completo', ''], ['org', 'Azienda', ''], ['phone', 'Telefono', ''], ['vemail', 'Email', ''], ['vurl', 'Sito', '']],
-  event: [['summary', 'Titolo evento', ''], ['location', 'Luogo', ''], ['start', 'Inizio (YYYYMMDDThhmmss)', ''], ['end', 'Fine (YYYYMMDDThhmmss)', '']],
+  text: [['text', 'Text', 'Type here...']],
+  email: [['email', 'Email', 'name@domain.com'], ['subject', 'Subject', ''], ['body', 'Message', '']],
+  tel: [['tel', 'Number', '+1...']],
+  sms: [['tel', 'Number', '+1...'], ['body', 'Message', '']],
+  wifi: [['ssid', 'Network name (SSID)', ''], ['password', 'Password', ''], ['enc', 'Security (WPA/WEP/nopass)', 'WPA']],
+  vcard: [['fn', 'Full name', ''], ['org', 'Company', ''], ['phone', 'Phone', ''], ['vemail', 'Email', ''], ['vurl', 'Website', '']],
+  event: [['summary', 'Event title', ''], ['location', 'Location', ''], ['start', 'Start (YYYYMMDDThhmmss)', ''], ['end', 'End (YYYYMMDDThhmmss)', '']],
 };
 
-let FILE_URL = null;   // public url del file caricato (tipo "file")
+let FILE_URL = null;   // public url of the uploaded file ("file" type)
 
 function renderTypeFields() {
   const type = $('g_type').value;
@@ -94,7 +94,7 @@ function renderTypeFields() {
   if (type === 'file') {
     FILE_URL = null;
     const f = el('div', 'field');
-    f.innerHTML = `<label>Carica un file (max ~50MB)</label>
+    f.innerHTML = `<label>Upload a file (max ~50MB)</label>
       <input type="file" id="g_filein">
       <div class="msg" id="g_filemsg"></div>`;
     wrap.appendChild(f);
@@ -121,14 +121,14 @@ function isDynable(type) { return type === 'url' || type === 'file'; }
 async function uploadContentFile(e) {
   const file = e.target.files[0]; const m = $('g_filemsg');
   if (!file) { FILE_URL = null; refreshQR(); return; }
-  m.className = 'msg'; m.textContent = 'Caricamento...';
+  m.className = 'msg'; m.textContent = 'Uploading...';
   const safe = file.name.replace(/[^\w.\-]+/g, '_');
   const path = `${STATE.tenantId}/${Date.now()}_${safe}`;
   const { error } = await sb.storage.from('files').upload(path, file, { upsert: true, contentType: file.type || 'application/octet-stream' });
   if (error) { m.className = 'msg err'; m.textContent = error.message; FILE_URL = null; refreshQR(); return; }
   FILE_URL = sb.storage.from('files').getPublicUrl(path).data.publicUrl;
   if (!$('g_title').value) $('g_title').value = file.name;
-  m.className = 'msg ok'; m.textContent = 'File caricato ✓ Il QR aprirà questo file.';
+  m.className = 'msg ok'; m.textContent = 'File uploaded ✓ The QR will open this file.';
   refreshQR();
 }
 $('g_type').onchange = () => { renderTypeFields(); refreshQR(); };
@@ -162,8 +162,8 @@ function buildPayload() {
 $('d_gradient').addEventListener('change', () => $('d_gradient_field').classList.toggle('hidden', !$('d_gradient').checked));
 $('d_transparent').addEventListener('change', () => {
   const on = $('d_transparent').checked;
-  $('d_bg').disabled = $('d_bg_t').disabled = on;            // sfondo colore irrilevante se trasparente
-  $('qrPreview').classList.toggle('checkerboard', on);       // mostra la trasparenza in anteprima
+  $('d_bg').disabled = $('d_bg_t').disabled = on;            // bg color irrelevant if transparent
+  $('qrPreview').classList.toggle('checkerboard', on);       // show transparency in preview
 });
 
 let LOGO_DATA = null;
@@ -204,12 +204,12 @@ function refreshQR() {
   const payload = buildPayload();
   const stage = $('qrPreview');
 
-  // placeholder quando non c'è contenuto
+  // placeholder when there's no content
   if (!payload && !dyn) {
     qrPreview = null;
     stage.innerHTML = `<div class="qr-empty">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 21v.01M17 21h.01M21 17h.01"/></svg>
-      Inserisci un contenuto per vedere l'anteprima del tuo QR</div>`;
+      Enter content to preview your QR</div>`;
     return;
   }
   const data = dyn ? `${redirectBase()}/PREVIEW` : payload;
@@ -223,11 +223,11 @@ $('applyBrandBtn').onclick = () => {
   if (b.primary_color) { $('d_fg').value = b.primary_color; $('d_fg_t').value = b.primary_color; }
   if (b.background_color) { $('d_bg').value = b.background_color; $('d_bg_t').value = b.background_color; }
   if (b.logo_url) { LOGO_DATA = b.logo_url; }
-  refreshQR(); toast('Branding applicato');
+  refreshQR(); toast('Branding applied');
 };
 
 /* ===================== EXPORT ===================== */
-/* il payload attualmente mostrato in anteprima (statico o placeholder dinamico) */
+/* the payload currently shown in preview (static or dynamic placeholder) */
 function currentQRData() {
   const dyn = $('g_dynamic').checked && isDynable($('g_type').value);
   const payload = buildPayload();
@@ -235,13 +235,13 @@ function currentQRData() {
   return dyn ? `${redirectBase()}/PREVIEW` : payload;
 }
 
-/* salva un blob: su mobile usa la Web Share API (menu Salva su File/Foto),
-   altrimenti download classico via anchor */
+/* save a blob: on mobile use the Web Share API (Save to Files/Photos menu),
+   otherwise classic anchor download */
 async function saveBlob(blob, filename, mime) {
   const file = new File([blob], filename, { type: mime });
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try { await navigator.share({ files: [file], title: filename }); return; }
-    catch (e) { if (e && e.name === 'AbortError') return; /* annullato: ok */ }
+    catch (e) { if (e && e.name === 'AbortError') return; /* cancelled: ok */ }
   }
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a'); a.href = url; a.download = filename;
@@ -249,9 +249,9 @@ async function saveBlob(blob, filename, mime) {
   setTimeout(() => URL.revokeObjectURL(url), 4000);
 }
 
-/* export riusabile: vale sia per l'anteprima sia per i QR salvati */
+/* reusable export: works for both the preview and saved QR codes */
 async function downloadQR(data, design, title, ext, size = 1024) {
-  if (!data) { toast('Nessun contenuto da scaricare', false); return; }
+  if (!data) { toast('Nothing to download', false); return; }
   const name = (title || 'qr').replace(/[^\w\-]+/g, '_');
   const isVec = ext === 'svg';
   const inst = new QRCodeStyling({ ...qrOptions(data, design || {}, size), type: isVec ? 'svg' : 'canvas' });
@@ -266,29 +266,29 @@ async function downloadQR(data, design, title, ext, size = 1024) {
       const blob = await inst.getRawData(ext);
       await saveBlob(blob, `${name}.${ext}`, isVec ? 'image/svg+xml' : 'image/png');
     }
-  } catch (e) { toast('Errore export: ' + (e.message || e), false); }
+  } catch (e) { toast('Export error: ' + (e.message || e), false); }
 }
 
 function exportQR(ext) {
   const data = currentQRData();
-  if (!data) { toast('Inserisci un contenuto prima di scaricare', false); return; }
+  if (!data) { toast('Enter content before downloading', false); return; }
   return downloadQR(data, currentDesign(), $('g_title').value, ext, +$('dl_size').value);
 }
 $('dlPng').onclick = () => exportQR('png');
 $('dlSvg').onclick = () => exportQR('svg');
 $('dlPdf').onclick = () => exportQR('pdf');
 
-/* menu di download per un QR salvato (formato + dimensione + trasparenza) */
+/* download menu for a saved QR (format + size + transparency) */
 function downloadSavedQR(q) {
-  openModal(`<h3 style="margin-top:0">Scarica «${escapeHtml(q.title)}»</h3>
+  openModal(`<h3 style="margin-top:0">Download «${escapeHtml(q.title)}»</h3>
     <div class="row" style="align-items:flex-end">
-      <div class="field" style="margin:0"><label>Dimensione</label>
-        <select id="sv_size"><option value="512">512px</option><option value="1024" selected>1024px</option><option value="2048">2048px (stampa)</option></select>
+      <div class="field" style="margin:0"><label>Size</label>
+        <select id="sv_size"><option value="512">512px</option><option value="1024" selected>1024px</option><option value="2048">2048px (print)</option></select>
       </div>
     </div>
     <div class="field" style="margin-top:12px">
       <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
-        <input type="checkbox" id="sv_transparent" style="width:auto"><span>Sfondo trasparente (PNG/SVG)</span>
+        <input type="checkbox" id="sv_transparent" style="width:auto"><span>Transparent background (PNG/SVG)</span>
       </label>
     </div>
     <div class="row" style="margin-top:6px">
@@ -296,7 +296,7 @@ function downloadSavedQR(q) {
       <button class="btn-ghost" data-ext="svg">SVG</button>
       <button class="btn-ghost" data-ext="pdf">PDF</button>
     </div>
-    <div style="margin-top:14px;text-align:right"><button class="btn-ghost" onclick="closeModal()">Chiudi</button></div>`);
+    <div style="margin-top:14px;text-align:right"><button class="btn-ghost" onclick="closeModal()">Close</button></div>`);
   document.querySelectorAll('#modalRoot [data-ext]').forEach(b =>
     b.onclick = () => {
       const design = { ...(q.design || {}), transparent: $('sv_transparent').checked };
@@ -316,44 +316,44 @@ $('saveQrBtn').onclick = function () {
   const type = $('g_type').value;
   const dyn = $('g_dynamic').checked && isDynable(type);
   const payload = buildPayload();
-  if (type === 'file' && !FILE_URL) { toast('Carica prima un file', false); return; }
-  if (!payload) { toast('Inserisci un contenuto', false); return; }
-  // validazione runtime per i tipi che lo richiedono
-  if ((type === 'url' || (type === 'file' && dyn)) && !isUrl(payload)) { toast('URL non valida', false); return; }
-  if (type === 'email' && !isEmail(fieldVal('email'))) { toast('Email non valida', false); return; }
-  if ((type === 'tel' || type === 'sms') && !isTel(fieldVal('tel'))) { toast('Numero non valido', false); return; }
+  if (type === 'file' && !FILE_URL) { toast('Upload a file first', false); return; }
+  if (!payload) { toast('Enter content', false); return; }
+  // runtime validation for the types that need it
+  if ((type === 'url' || (type === 'file' && dyn)) && !isUrl(payload)) { toast('Invalid URL', false); return; }
+  if (type === 'email' && !isEmail(fieldVal('email'))) { toast('Invalid email', false); return; }
+  if ((type === 'tel' || type === 'sms') && !isTel(fieldVal('tel'))) { toast('Invalid phone number', false); return; }
 
   const row = {
     tenant_id: STATE.tenantId, created_by: STATE.user.id,
-    title: $('g_title').value || 'QR senza titolo', type,
+    title: $('g_title').value || 'Untitled QR', type,
     is_dynamic: dyn, design: currentDesign(),
   };
   if (dyn) { row.short_code = randCode(); row.destination = payload; row.content = `${redirectBase()}/${row.short_code}`; }
   else { row.content = payload; }
 
-  return busy(this, 'Salvataggio…', async () => {
+  return busy(this, 'Saving…', async () => {
     const { error } = await sb.from('qr_codes').insert(row);
     if (error) { toast(error.message, false); return; }
-    toast('QR salvato ✓');
+    toast('QR saved ✓');
   });
 };
 
 /* ===================== CODES LIST ===================== */
 async function loadCodes() {
   const list = $('codesList');
-  // skeleton shimmer durante il fetch (mai spinner)
+  // skeleton shimmer during fetch (never a spinner)
   list.innerHTML = Array.from({ length: 6 }, () => '<div class="skeleton sk-card"></div>').join('');
   const { data, error } = await sb.from('qr_codes').select('*').order('created_at', { ascending: false });
   if (error) {
-    list.innerHTML = `<div class="empty"><div class="empty-t">Errore di caricamento</div>
+    list.innerHTML = `<div class="empty"><div class="empty-t">Loading error</div>
       <div>${escapeHtml(error.message)}</div></div>`; return;
   }
   if (!data.length) {
     list.innerHTML = `<div class="empty" style="grid-column:1/-1">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3M21 21v.01M17 21h.01M21 17h.01"/></svg>
-      <div class="empty-t">Nessun QR, per ora</div>
-      <div>Crea il tuo primo QR code brandizzato.</div>
-      <button id="emptyGen">✨ Genera il primo QR</button></div>`;
+      <div class="empty-t">No QR codes yet</div>
+      <div>Create your first branded QR code.</div>
+      <button id="emptyGen">✨ Generate your first QR</button></div>`;
     $('emptyGen').onclick = () => document.querySelector('.nav[data-page="generate"]').click();
     return;
   }
@@ -364,13 +364,13 @@ async function loadCodes() {
     new QRCodeStyling(qrOptions(q.content || ' ', q.design || currentDesign(), 150)).append(thumb);
     card.appendChild(el('div', null,
       `<h4>${escapeHtml(q.title)}</h4>
-       <span class="badge ${q.is_dynamic ? 'dyn' : 'stat'}">${q.is_dynamic ? 'Dinamico' : 'Statico'}</span>
+       <span class="badge ${q.is_dynamic ? 'dyn' : 'stat'}">${q.is_dynamic ? 'Dynamic' : 'Static'}</span>
        <span class="muted" style="font-size:12px"> · ${q.type}</span>`));
     const act = el('div', 'card-actions');
-    const dlBtn = el('button', 'btn-ghost btn-sm', '⬇ Scarica'); dlBtn.onclick = () => downloadSavedQR(q); act.appendChild(dlBtn);
+    const dlBtn = el('button', 'btn-ghost btn-sm', '⬇ Download'); dlBtn.onclick = () => downloadSavedQR(q); act.appendChild(dlBtn);
     if (q.is_dynamic) {
       const aBtn = el('button', 'btn-ghost btn-sm', '📊 Analytics'); aBtn.onclick = () => showAnalytics(q); act.appendChild(aBtn);
-      const eBtn = el('button', 'btn-ghost btn-sm', '✏️ Destinazione'); eBtn.onclick = () => editDestination(q); act.appendChild(eBtn);
+      const eBtn = el('button', 'btn-ghost btn-sm', '✏️ Destination'); eBtn.onclick = () => editDestination(q); act.appendChild(eBtn);
     }
     const dBtn = el('button', 'btn-danger btn-sm', '🗑'); dBtn.onclick = () => deleteQR(q.id); act.appendChild(dBtn);
     card.appendChild(act);
@@ -379,54 +379,54 @@ async function loadCodes() {
 }
 
 async function deleteQR(id) {
-  if (!await confirmModal('Eliminare questo QR?', { ok: 'Elimina' })) return;
+  if (!await confirmModal('Delete this QR?', { ok: 'Delete' })) return;
   const { error } = await sb.from('qr_codes').delete().eq('id', id);
   if (error) return toast(error.message, false);
-  toast('Eliminato'); loadCodes();
+  toast('Deleted'); loadCodes();
 }
 
 function editDestination(q) {
   openModal(`
-    <h3 style="margin-top:0">Modifica destinazione</h3>
-    <p class="muted" style="font-size:13px">Il QR stampato resta lo stesso, cambia solo dove punta.</p>
-    <div class="field"><label>Nuova URL</label><input id="newDest" value="${escapeHtml(q.destination || '')}"></div>
-    <div class="row"><button class="btn-ghost" onclick="closeModal()">Annulla</button>
-    <button id="saveDest">Salva</button></div>`);
+    <h3 style="margin-top:0">Edit destination</h3>
+    <p class="muted" style="font-size:13px">The printed QR stays the same — only its target changes.</p>
+    <div class="field"><label>New URL</label><input id="newDest" value="${escapeHtml(q.destination || '')}"></div>
+    <div class="row"><button class="btn-ghost" onclick="closeModal()">Cancel</button>
+    <button id="saveDest">Save</button></div>`);
   $('saveDest').onclick = async () => {
     const { error } = await sb.from('qr_codes').update({ destination: $('newDest').value }).eq('id', q.id);
     if (error) return toast(error.message, false);
-    closeModal(); toast('Destinazione aggiornata ✓');
+    closeModal(); toast('Destination updated ✓');
   };
 }
 
 async function showAnalytics(q) {
   openModal(`<h3 style="margin-top:0">${escapeHtml(q.title)} — Analytics</h3>
-    <div class="stat-grid"><div class="stat-box"><div class="n" id="aTot">…</div><div class="l">Scansioni totali</div></div>
-    <div class="stat-box"><div class="n" id="a7">…</div><div class="l">Ultimi 7 giorni</div></div>
+    <div class="stat-grid"><div class="stat-box"><div class="n" id="aTot">…</div><div class="l">Total scans</div></div>
+    <div class="stat-box"><div class="n" id="a7">…</div><div class="l">Last 7 days</div></div>
     <div class="stat-box"><div class="n" id="aShort" style="font-size:14px">/${q.short_code}</div><div class="l">Short code</div></div></div>
     <canvas id="aChart" height="140"></canvas>
-    <div style="margin-top:10px"><b style="font-size:13px">Dispositivi</b><div id="aDev" class="swatches" style="margin-top:8px"></div></div>
-    <div style="margin-top:14px;text-align:right"><button class="btn-ghost" onclick="closeModal()">Chiudi</button></div>`);
+    <div style="margin-top:10px"><b style="font-size:13px">Devices</b><div id="aDev" class="swatches" style="margin-top:8px"></div></div>
+    <div style="margin-top:14px;text-align:right"><button class="btn-ghost" onclick="closeModal()">Close</button></div>`);
   const { data, error } = await sb.rpc('qr_analytics', { p_qr: q.id });
   if (error) { $('aTot').textContent = '0'; return; }
   const r = Array.isArray(data) ? data[0] : data;
   $('aTot').textContent = r.total || 0; $('a7').textContent = r.last_7 || 0;
   const byDay = r.by_day || {}; const labels = Object.keys(byDay); const vals = labels.map(k => byDay[k]);
-  new Chart($('aChart'), { type: 'line', data: { labels, datasets: [{ label: 'Scansioni', data: vals, borderColor: '#8b5cf6', tension: .3, fill: false }] }, options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9aa1b2' } }, y: { ticks: { color: '#9aa1b2' }, beginAtZero: true } } } });
-  const dev = r.by_device || {}; $('aDev').innerHTML = Object.keys(dev).length ? Object.entries(dev).map(([k, v]) => `<span class="chip">${k}: <b>${v}</b></span>`).join('') : '<span class="muted">Nessun dato</span>';
+  new Chart($('aChart'), { type: 'line', data: { labels, datasets: [{ label: 'Scans', data: vals, borderColor: '#8b5cf6', tension: .3, fill: false }] }, options: { plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#9aa1b2' } }, y: { ticks: { color: '#9aa1b2' }, beginAtZero: true } } } });
+  const dev = r.by_device || {}; $('aDev').innerHTML = Object.keys(dev).length ? Object.entries(dev).map(([k, v]) => `<span class="chip">${k}: <b>${v}</b></span>`).join('') : '<span class="muted">No data</span>';
 }
 
 /* ===================== BULK CSV ===================== */
 $('bulkRun').onclick = () => {
   const btn = $('bulkRun');
   const f = $('bulkFile').files[0]; const m = $('bulkMsg');
-  if (!f) { m.className = 'msg err'; m.textContent = 'Seleziona un CSV'; return; }
-  const done = (cls, txt) => { m.className = 'msg ' + cls; m.textContent = txt; btn.disabled = false; btn.textContent = 'Genera ZIP'; };
-  btn.disabled = true; btn.textContent = 'Elaborazione…';
-  m.className = 'msg'; m.textContent = 'Elaborazione...';
+  if (!f) { m.className = 'msg err'; m.textContent = 'Select a CSV'; return; }
+  const done = (cls, txt) => { m.className = 'msg ' + cls; m.textContent = txt; btn.disabled = false; btn.textContent = 'Generate ZIP'; };
+  btn.disabled = true; btn.textContent = 'Processing…';
+  m.className = 'msg'; m.textContent = 'Processing...';
   Papa.parse(f, {
     header: true, skipEmptyLines: true,
-    error: err => done('err', 'CSV illeggibile: ' + err.message),
+    error: err => done('err', 'Unreadable CSV: ' + err.message),
     complete: async res => {
       const rows = res.data; const zip = new JSZip(); const dyn = $('bulkDynamic').checked;
       const d = currentDesign(); const toInsert = [];
@@ -446,12 +446,12 @@ $('bulkRun').onclick = () => {
         const blob = await new QRCodeStyling(qrOptions(data, d, 600)).getRawData('png');
         zip.file(`${title.replace(/[^\w\-]+/g, '_')}.png`, blob);
       }
-      if (!made) { done('err', 'Nessuna riga valida: servono colonne title e content/url/destination.'); return; }
+      if (!made) { done('err', 'No valid rows: you need title and content/url/destination columns.'); return; }
       if (dyn && toInsert.length) { const { error } = await sb.from('qr_codes').insert(toInsert); if (error) { done('err', error.message); return; } }
       const content = await zip.generateAsync({ type: 'blob' });
       const stamp = new Date().toISOString().slice(0, 10);
       const a = document.createElement('a'); a.href = URL.createObjectURL(content); a.download = `qr_bulk_${stamp}.zip`; a.click();
-      done('ok', `Generati ${made} QR ✓${i > made ? ` · ${i - made} righe saltate` : ''}`);
+      done('ok', `Generated ${made} QR ✓${i > made ? ` · ${i - made} rows skipped` : ''}`);
     }
   });
 };
@@ -472,8 +472,8 @@ $('b_logo').onchange = e => {
   if (B_LOGO_FILE) { const r = new FileReader(); r.onload = () => $('b_logo_prev').innerHTML = `<img src="${r.result}" style="max-height:60px;border-radius:8px;background:#fff;padding:6px">`; r.readAsDataURL(B_LOGO_FILE); }
 };
 
-$('saveBranding').onclick = function () { return busy(this, 'Salvataggio…', async () => {
-  const m = $('brandMsg'); m.className = 'msg'; m.textContent = 'Salvataggio...';
+$('saveBranding').onclick = function () { return busy(this, 'Saving…', async () => {
+  const m = $('brandMsg'); m.className = 'msg'; m.textContent = 'Saving...';
   let logo_url = STATE.branding.logo_url || null;
   if (B_LOGO_FILE) {
     const path = `${STATE.tenantId}/logo_${Date.now()}_${B_LOGO_FILE.name.replace(/[^\w.\-]+/g, '_')}`;
@@ -488,8 +488,8 @@ $('saveBranding').onclick = function () { return busy(this, 'Salvataggio…', as
   };
   const { error } = await sb.from('branding').upsert(payload, { onConflict: 'tenant_id' });
   if (error) { m.className = 'msg err'; m.textContent = error.message; return; }
-  STATE.branding = { ...STATE.branding, ...payload }; $('tenantName').textContent = payload.company_name || 'La tua azienda';
-  m.className = 'msg ok'; m.textContent = 'Branding salvato ✓';
+  STATE.branding = { ...STATE.branding, ...payload }; $('tenantName').textContent = payload.company_name || 'Your company';
+  m.className = 'msg ok'; m.textContent = 'Branding saved ✓';
 }); };
 
 /* ===================== CUSTOM DOMAIN ===================== */
@@ -501,8 +501,8 @@ function renderDomain() {
   if (has) {
     $('dom_host').textContent = b.custom_domain;
     const badge = $('dom_badge');
-    if (b.domain_status === 'active') { badge.textContent = 'attivo ✓'; badge.className = 'badge stat'; badge.style.background = 'rgba(34,197,94,.2)'; badge.style.color = '#86efac'; }
-    else { badge.textContent = 'in attesa DNS'; badge.className = 'badge dyn'; badge.style.background = ''; badge.style.color = ''; }
+    if (b.domain_status === 'active') { badge.textContent = 'active ✓'; badge.className = 'badge stat'; badge.style.background = 'rgba(34,197,94,.2)'; badge.style.color = '#86efac'; }
+    else { badge.textContent = 'awaiting DNS'; badge.className = 'badge dyn'; badge.style.background = ''; badge.style.color = ''; }
     $('dom_name').textContent = b.custom_domain;
     $('dom_target').textContent = QR_CONFIG.CNAME_TARGET;
   }
@@ -516,41 +516,41 @@ async function callDomains(action, domain) {
     body: JSON.stringify({ action, domain }),
   });
   const data = await res.json().catch(() => ({}));
-  if (!res.ok || data.error) throw new Error(data.error || ('Errore ' + res.status));
+  if (!res.ok || data.error) throw new Error(data.error || ('Error ' + res.status));
   return data;
 }
 
 $('dom_add').onclick = function () {
   const m = $('domMsg'); const host = $('dom_input').value.trim();
-  if (!host) { m.className = 'msg err'; m.textContent = 'Inserisci un dominio'; return; }
-  m.className = 'msg'; m.textContent = 'Collegamento...';
-  return busy(this, 'Collegamento…', async () => {
+  if (!host) { m.className = 'msg err'; m.textContent = 'Enter a domain'; return; }
+  m.className = 'msg'; m.textContent = 'Connecting...';
+  return busy(this, 'Connecting…', async () => {
   try {
     const r = await callDomains('add', host);
     STATE.branding.custom_domain = r.hostname; STATE.branding.domain_status = 'pending';
-    renderDomain(); m.className = 'msg ok'; m.textContent = 'Dominio collegato. Aggiungi il CNAME e premi Verifica.';
+    renderDomain(); m.className = 'msg ok'; m.textContent = 'Domain connected. Add the CNAME and press Verify.';
   } catch (e) { m.className = 'msg err'; m.textContent = e.message; }
   });
 };
 
-$('dom_verify').onclick = function () { return busy(this, 'Verifica…', async () => {
-  const m = $('domMsg'); m.className = 'msg'; m.textContent = 'Verifica...';
+$('dom_verify').onclick = function () { return busy(this, 'Verifying…', async () => {
+  const m = $('domMsg'); m.className = 'msg'; m.textContent = 'Verifying...';
   try {
     const r = await callDomains('status');
     STATE.branding.domain_status = r.status; renderDomain();
-    if (r.status === 'active') { m.className = 'msg ok'; m.textContent = 'Dominio attivo ✓ I nuovi QR dinamici useranno il tuo dominio.'; }
-    else { m.className = 'msg'; m.textContent = 'Ancora in attesa: il DNS può richiedere qualche minuto. Riprova tra poco.'; }
+    if (r.status === 'active') { m.className = 'msg ok'; m.textContent = 'Domain active ✓ New dynamic QR codes will use your domain.'; }
+    else { m.className = 'msg'; m.textContent = 'Still pending: DNS can take a few minutes. Try again shortly.'; }
   } catch (e) { m.className = 'msg err'; m.textContent = e.message; }
 }); };
 
 $('dom_remove').onclick = async function () {
-  if (!await confirmModal('Rimuovere il dominio custom?', { ok: 'Rimuovi' })) return;
-  const m = $('domMsg'); m.className = 'msg'; m.textContent = 'Rimozione...';
-  return busy(this, 'Rimozione…', async () => {
+  if (!await confirmModal('Remove the custom domain?', { ok: 'Remove' })) return;
+  const m = $('domMsg'); m.className = 'msg'; m.textContent = 'Removing...';
+  return busy(this, 'Removing…', async () => {
   try {
     await callDomains('remove');
     STATE.branding.custom_domain = null; STATE.branding.domain_status = 'none';
-    renderDomain(); m.className = 'msg ok'; m.textContent = 'Dominio rimosso.';
+    renderDomain(); m.className = 'msg ok'; m.textContent = 'Domain removed.';
   } catch (e) { m.className = 'msg err'; m.textContent = e.message; }
   });
 };
@@ -560,13 +560,13 @@ function openModal(html) { $('modalRoot').innerHTML = `<div class="modal-bg" onc
 function closeModal() { $('modalRoot').innerHTML = ''; }
 function escapeHtml(s) { return (s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 
-/* modal di conferma (sostituisce confirm() nativo) */
-function confirmModal(msg, { ok = 'Conferma', danger = true } = {}) {
+/* confirm modal (replaces native confirm()) */
+function confirmModal(msg, { ok = 'Confirm', danger = true } = {}) {
   return new Promise(resolve => {
-    openModal(`<h3 style="margin-top:0">Conferma</h3>
+    openModal(`<h3 style="margin-top:0">Confirm</h3>
       <p class="muted" style="font-size:14px">${escapeHtml(msg)}</p>
       <div class="row" style="margin-top:16px;justify-content:flex-end">
-        <button class="btn-ghost" id="cfNo">Annulla</button>
+        <button class="btn-ghost" id="cfNo">Cancel</button>
         <button class="${danger ? 'btn-danger' : ''}" id="cfYes">${escapeHtml(ok)}</button>
       </div>`);
     $('cfNo').onclick = () => { closeModal(); resolve(false); };
