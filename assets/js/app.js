@@ -235,21 +235,36 @@ function currentQRData() {
   return dyn ? `${redirectBase()}/PREVIEW` : payload;
 }
 
+/* salva un blob: su mobile usa la Web Share API (menu Salva su File/Foto),
+   altrimenti download classico via anchor */
+async function saveBlob(blob, filename, mime) {
+  const file = new File([blob], filename, { type: mime });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: filename }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; /* annullato: ok */ }
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
 /* export riusabile: vale sia per l'anteprima sia per i QR salvati */
-async function downloadQR(data, design, title, ext) {
+async function downloadQR(data, design, title, ext, size = 1024) {
   if (!data) { toast('Nessun contenuto da scaricare', false); return; }
   const name = (title || 'qr').replace(/[^\w\-]+/g, '_');
   const isVec = ext === 'svg';
-  const inst = new QRCodeStyling({ ...qrOptions(data, design || {}, 1024), type: isVec ? 'svg' : 'canvas' });
+  const inst = new QRCodeStyling({ ...qrOptions(data, design || {}, size), type: isVec ? 'svg' : 'canvas' });
   try {
     if (ext === 'pdf') {
-      const blob = await inst.getRawData('png');
-      const url = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
+      const png = await inst.getRawData('png');
+      const url = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(png); });
       const { jsPDF } = window.jspdf; const pdf = new jsPDF();
       pdf.addImage(url, 'PNG', 60, 60, 90, 90);
-      pdf.save(name + '.pdf');
+      await saveBlob(pdf.output('blob'), name + '.pdf', 'application/pdf');
     } else {
-      await inst.download({ name, extension: ext });
+      const blob = await inst.getRawData(ext);
+      await saveBlob(blob, `${name}.${ext}`, isVec ? 'image/svg+xml' : 'image/png');
     }
   } catch (e) { toast('Errore export: ' + (e.message || e), false); }
 }
@@ -257,24 +272,37 @@ async function downloadQR(data, design, title, ext) {
 function exportQR(ext) {
   const data = currentQRData();
   if (!data) { toast('Inserisci un contenuto prima di scaricare', false); return; }
-  return downloadQR(data, currentDesign(), $('g_title').value, ext);
+  return downloadQR(data, currentDesign(), $('g_title').value, ext, +$('dl_size').value);
 }
 $('dlPng').onclick = () => exportQR('png');
 $('dlSvg').onclick = () => exportQR('svg');
 $('dlPdf').onclick = () => exportQR('pdf');
 
-/* menu di download per un QR salvato (PNG/SVG/PDF) */
+/* menu di download per un QR salvato (formato + dimensione + trasparenza) */
 function downloadSavedQR(q) {
   openModal(`<h3 style="margin-top:0">Scarica «${escapeHtml(q.title)}»</h3>
-    <p class="muted" style="font-size:13px">Scegli il formato. Alta risoluzione (1024px).</p>
-    <div class="row" style="margin-top:14px">
+    <div class="row" style="align-items:flex-end">
+      <div class="field" style="margin:0"><label>Dimensione</label>
+        <select id="sv_size"><option value="512">512px</option><option value="1024" selected>1024px</option><option value="2048">2048px (stampa)</option></select>
+      </div>
+    </div>
+    <div class="field" style="margin-top:12px">
+      <label style="display:flex;gap:8px;align-items:center;cursor:pointer">
+        <input type="checkbox" id="sv_transparent" style="width:auto"><span>Sfondo trasparente (PNG/SVG)</span>
+      </label>
+    </div>
+    <div class="row" style="margin-top:6px">
       <button class="btn-ghost" data-ext="png">PNG</button>
       <button class="btn-ghost" data-ext="svg">SVG</button>
       <button class="btn-ghost" data-ext="pdf">PDF</button>
     </div>
     <div style="margin-top:14px;text-align:right"><button class="btn-ghost" onclick="closeModal()">Chiudi</button></div>`);
   document.querySelectorAll('#modalRoot [data-ext]').forEach(b =>
-    b.onclick = () => { downloadQR(q.content, q.design, q.title, b.dataset.ext); closeModal(); });
+    b.onclick = () => {
+      const design = { ...(q.design || {}), transparent: $('sv_transparent').checked };
+      downloadQR(q.content, design, q.title, b.dataset.ext, +$('sv_size').value);
+      closeModal();
+    });
 }
 
 /* ===================== SAVE QR ===================== */
