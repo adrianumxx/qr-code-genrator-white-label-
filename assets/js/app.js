@@ -158,8 +158,13 @@ function buildPayload() {
   A.oninput = () => { B.value = A.value; refreshQR(); };
   B.oninput = () => { A.value = B.value; refreshQR(); };
 });
-['d_gradient', 'd_dotshape', 'd_corner', 'd_ecc', 'd_margin'].forEach(id => $(id).oninput = refreshQR);
+['d_gradient', 'd_dotshape', 'd_corner', 'd_ecc', 'd_margin', 'd_transparent'].forEach(id => $(id).oninput = refreshQR);
 $('d_gradient').addEventListener('change', () => $('d_gradient_field').classList.toggle('hidden', !$('d_gradient').checked));
+$('d_transparent').addEventListener('change', () => {
+  const on = $('d_transparent').checked;
+  $('d_bg').disabled = $('d_bg_t').disabled = on;            // sfondo colore irrilevante se trasparente
+  $('qrPreview').classList.toggle('checkerboard', on);       // mostra la trasparenza in anteprima
+});
 
 let LOGO_DATA = null;
 $('d_logo').onchange = e => {
@@ -170,7 +175,7 @@ $('d_logo').onchange = e => {
 function currentDesign() {
   return {
     fg: $('d_fg').value, bg: $('d_bg').value, gradient: $('d_gradient').checked,
-    fg2: $('d_fg2').value,
+    fg2: $('d_fg2').value, transparent: $('d_transparent').checked,
     dotshape: $('d_dotshape').value, corner: $('d_corner').value,
     ecc: $('d_ecc').value, margin: +$('d_margin').value, logo: LOGO_DATA,
   };
@@ -183,7 +188,7 @@ function qrOptions(dataStr, d, size = 280) {
   const opt = {
     width: size, height: size, type: 'svg', data: dataStr || ' ',
     margin: d.margin, qrOptions: { errorCorrectionLevel: d.ecc },
-    backgroundOptions: { color: d.bg },
+    backgroundOptions: { color: d.transparent ? 'rgba(0,0,0,0)' : d.bg },
     dotsOptions: dots,
     cornersSquareOptions: { type: d.corner, color: d.fg },
     cornersDotOptions: { color: d.fg },
@@ -222,20 +227,33 @@ $('applyBrandBtn').onclick = () => {
 };
 
 /* ===================== EXPORT ===================== */
-function exportQR(ext) {
-  if (!qrPreview) return;
-  if (ext === 'pdf') {
-    qrPreview.getRawData('png').then(blob => {
-      const r = new FileReader();
-      r.onload = () => {
-        const { jsPDF } = window.jspdf; const pdf = new jsPDF();
-        pdf.addImage(r.result, 'PNG', 60, 60, 90, 90);
-        pdf.save((($('g_title').value || 'qr')) + '.pdf');
-      }; r.readAsDataURL(blob);
-    });
-  } else {
-    qrPreview.download({ name: ($('g_title').value || 'qr'), extension: ext });
-  }
+/* il payload attualmente mostrato in anteprima (statico o placeholder dinamico) */
+function currentQRData() {
+  const dyn = $('g_dynamic').checked && isDynable($('g_type').value);
+  const payload = buildPayload();
+  if (!payload && !dyn) return null;
+  return dyn ? `${redirectBase()}/PREVIEW` : payload;
+}
+
+async function exportQR(ext) {
+  const data = currentQRData();
+  if (!data) { toast('Inserisci un contenuto prima di scaricare', false); return; }
+  const d = currentDesign();
+  const name = ($('g_title').value || 'qr').replace(/[^\w\-]+/g, '_');
+  // istanza dedicata: canvas per PNG/PDF (raster), svg per SVG (vettoriale), 1024px
+  const isVec = ext === 'svg';
+  const inst = new QRCodeStyling({ ...qrOptions(data, d, 1024), type: isVec ? 'svg' : 'canvas' });
+  try {
+    if (ext === 'pdf') {
+      const blob = await inst.getRawData('png');
+      const url = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
+      const { jsPDF } = window.jspdf; const pdf = new jsPDF();
+      pdf.addImage(url, 'PNG', 60, 60, 90, 90);
+      pdf.save(name + '.pdf');
+    } else {
+      await inst.download({ name, extension: ext });
+    }
+  } catch (e) { toast('Errore export: ' + (e.message || e), false); }
 }
 $('dlPng').onclick = () => exportQR('png');
 $('dlSvg').onclick = () => exportQR('svg');
