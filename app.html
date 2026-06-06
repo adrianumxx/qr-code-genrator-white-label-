@@ -130,6 +130,10 @@
           <div class="qr-stage"><div id="qrPreview"></div></div>
           <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
             <button id="saveQrBtn">💾 Salva QR</button>
+            <div class="field" style="margin:0">
+              <label>Dimensione download</label>
+              <select id="dl_size"><option value="512">512px</option><option value="1024" selected>1024px</option><option value="2048">2048px (stampa)</option></select>
+            </div>
             <div class="row">
               <button class="btn-ghost btn-sm" id="dlPng">PNG</button>
               <button class="btn-ghost btn-sm" id="dlSvg">SVG</button>
