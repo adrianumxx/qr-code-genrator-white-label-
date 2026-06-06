@@ -131,12 +131,13 @@ function buildPayload() {
 
 /* ===================== DESIGN / QR RENDERING ===================== */
 // sync color text<->picker
-[['d_fg', 'd_fg_t'], ['d_bg', 'd_bg_t'], ['b_primary', 'b_primary_t'], ['b_bg', 'b_bg_t'], ['b_accent', 'b_accent_t']].forEach(([a, b]) => {
+[['d_fg', 'd_fg_t'], ['d_fg2', 'd_fg2_t'], ['d_bg', 'd_bg_t'], ['b_primary', 'b_primary_t'], ['b_bg', 'b_bg_t'], ['b_accent', 'b_accent_t']].forEach(([a, b]) => {
   const A = $(a), B = $(b); if (!A) return;
   A.oninput = () => { B.value = A.value; refreshQR(); };
   B.oninput = () => { A.value = B.value; refreshQR(); };
 });
 ['d_gradient', 'd_dotshape', 'd_corner', 'd_ecc', 'd_margin'].forEach(id => $(id).oninput = refreshQR);
+$('d_gradient').addEventListener('change', () => $('d_gradient_field').classList.toggle('hidden', !$('d_gradient').checked));
 
 let LOGO_DATA = null;
 $('d_logo').onchange = e => {
@@ -147,6 +148,7 @@ $('d_logo').onchange = e => {
 function currentDesign() {
   return {
     fg: $('d_fg').value, bg: $('d_bg').value, gradient: $('d_gradient').checked,
+    fg2: $('d_fg2').value,
     dotshape: $('d_dotshape').value, corner: $('d_corner').value,
     ecc: $('d_ecc').value, margin: +$('d_margin').value, logo: LOGO_DATA,
   };
@@ -154,7 +156,7 @@ function currentDesign() {
 
 function qrOptions(dataStr, d, size = 280) {
   const dots = d.gradient
-    ? { type: d.dotshape, gradient: { type: 'linear', rotation: 0.8, colorStops: [{ offset: 0, color: d.fg }, { offset: 1, color: STATE.branding.accent_color || '#8b5cf6' }] } }
+    ? { type: d.dotshape, gradient: { type: 'linear', rotation: 0.8, colorStops: [{ offset: 0, color: d.fg }, { offset: 1, color: d.fg2 || (STATE.branding && STATE.branding.accent_color) || '#8b5cf6' }] } }
     : { type: d.dotshape, color: d.fg };
   const opt = {
     width: size, height: size, type: 'svg', data: dataStr || ' ',
@@ -270,7 +272,7 @@ async function loadCodes() {
 }
 
 async function deleteQR(id) {
-  if (!confirm('Eliminare questo QR?')) return;
+  if (!await confirmModal('Eliminare questo QR?', { ok: 'Elimina' })) return;
   const { error } = await sb.from('qr_codes').delete().eq('id', id);
   if (error) return toast(error.message, false);
   toast('Eliminato'); loadCodes();
@@ -316,12 +318,13 @@ $('bulkRun').onclick = () => {
     header: true, skipEmptyLines: true, complete: async res => {
       const rows = res.data; const zip = new JSZip(); const dyn = $('bulkDynamic').checked;
       const d = currentDesign(); const toInsert = [];
-      let i = 0;
+      let i = 0, made = 0;
       for (const row of rows) {
         i++;
         const title = row.title || row.name || ('qr_' + i);
         let data = row.content || row.url || row.destination || '';
         if (!data) continue;
+        made++;
         if (dyn) {
           const code = randCode();
           const rb = redirectBase();
@@ -334,7 +337,7 @@ $('bulkRun').onclick = () => {
       if (dyn && toInsert.length) { const { error } = await sb.from('qr_codes').insert(toInsert); if (error) { m.className = 'msg err'; m.textContent = error.message; return; } }
       const content = await zip.generateAsync({ type: 'blob' });
       const a = document.createElement('a'); a.href = URL.createObjectURL(content); a.download = 'qr_bulk.zip'; a.click();
-      m.className = 'msg ok'; m.textContent = `Generati ${i} QR ✓`;
+      m.className = 'msg ok'; m.textContent = `Generati ${made} QR ✓`;
     }
   });
 };
@@ -425,7 +428,7 @@ $('dom_verify').onclick = async () => {
 };
 
 $('dom_remove').onclick = async () => {
-  if (!confirm('Rimuovere il dominio custom?')) return;
+  if (!await confirmModal('Rimuovere il dominio custom?', { ok: 'Rimuovi' })) return;
   const m = $('domMsg'); m.className = 'msg'; m.textContent = 'Rimozione...';
   try {
     await callDomains('remove');
@@ -437,6 +440,20 @@ $('dom_remove').onclick = async () => {
 /* ---------- modal helpers ---------- */
 function openModal(html) { $('modalRoot').innerHTML = `<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`; }
 function closeModal() { $('modalRoot').innerHTML = ''; }
-function escapeHtml(s) { return (s || '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function escapeHtml(s) { return (s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+/* modal di conferma (sostituisce confirm() nativo) */
+function confirmModal(msg, { ok = 'Conferma', danger = true } = {}) {
+  return new Promise(resolve => {
+    openModal(`<h3 style="margin-top:0">Conferma</h3>
+      <p class="muted" style="font-size:14px">${escapeHtml(msg)}</p>
+      <div class="row" style="margin-top:16px;justify-content:flex-end">
+        <button class="btn-ghost" id="cfNo">Annulla</button>
+        <button class="${danger ? 'btn-danger' : ''}" id="cfYes">${escapeHtml(ok)}</button>
+      </div>`);
+    $('cfNo').onclick = () => { closeModal(); resolve(false); };
+    $('cfYes').onclick = () => { closeModal(); resolve(true); };
+  });
+}
 
 boot();
