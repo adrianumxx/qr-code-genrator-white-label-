@@ -235,14 +235,12 @@ function currentQRData() {
   return dyn ? `${redirectBase()}/PREVIEW` : payload;
 }
 
-async function exportQR(ext) {
-  const data = currentQRData();
-  if (!data) { toast('Inserisci un contenuto prima di scaricare', false); return; }
-  const d = currentDesign();
-  const name = ($('g_title').value || 'qr').replace(/[^\w\-]+/g, '_');
-  // istanza dedicata: canvas per PNG/PDF (raster), svg per SVG (vettoriale), 1024px
+/* export riusabile: vale sia per l'anteprima sia per i QR salvati */
+async function downloadQR(data, design, title, ext) {
+  if (!data) { toast('Nessun contenuto da scaricare', false); return; }
+  const name = (title || 'qr').replace(/[^\w\-]+/g, '_');
   const isVec = ext === 'svg';
-  const inst = new QRCodeStyling({ ...qrOptions(data, d, 1024), type: isVec ? 'svg' : 'canvas' });
+  const inst = new QRCodeStyling({ ...qrOptions(data, design || {}, 1024), type: isVec ? 'svg' : 'canvas' });
   try {
     if (ext === 'pdf') {
       const blob = await inst.getRawData('png');
@@ -255,9 +253,29 @@ async function exportQR(ext) {
     }
   } catch (e) { toast('Errore export: ' + (e.message || e), false); }
 }
+
+function exportQR(ext) {
+  const data = currentQRData();
+  if (!data) { toast('Inserisci un contenuto prima di scaricare', false); return; }
+  return downloadQR(data, currentDesign(), $('g_title').value, ext);
+}
 $('dlPng').onclick = () => exportQR('png');
 $('dlSvg').onclick = () => exportQR('svg');
 $('dlPdf').onclick = () => exportQR('pdf');
+
+/* menu di download per un QR salvato (PNG/SVG/PDF) */
+function downloadSavedQR(q) {
+  openModal(`<h3 style="margin-top:0">Scarica «${escapeHtml(q.title)}»</h3>
+    <p class="muted" style="font-size:13px">Scegli il formato. Alta risoluzione (1024px).</p>
+    <div class="row" style="margin-top:14px">
+      <button class="btn-ghost" data-ext="png">PNG</button>
+      <button class="btn-ghost" data-ext="svg">SVG</button>
+      <button class="btn-ghost" data-ext="pdf">PDF</button>
+    </div>
+    <div style="margin-top:14px;text-align:right"><button class="btn-ghost" onclick="closeModal()">Chiudi</button></div>`);
+  document.querySelectorAll('#modalRoot [data-ext]').forEach(b =>
+    b.onclick = () => { downloadQR(q.content, q.design, q.title, b.dataset.ext); closeModal(); });
+}
 
 /* ===================== SAVE QR ===================== */
 function randCode(n = 7) {
@@ -321,6 +339,7 @@ async function loadCodes() {
        <span class="badge ${q.is_dynamic ? 'dyn' : 'stat'}">${q.is_dynamic ? 'Dinamico' : 'Statico'}</span>
        <span class="muted" style="font-size:12px"> · ${q.type}</span>`));
     const act = el('div', 'card-actions');
+    const dlBtn = el('button', 'btn-ghost btn-sm', '⬇ Scarica'); dlBtn.onclick = () => downloadSavedQR(q); act.appendChild(dlBtn);
     if (q.is_dynamic) {
       const aBtn = el('button', 'btn-ghost btn-sm', '📊 Analytics'); aBtn.onclick = () => showAnalytics(q); act.appendChild(aBtn);
       const eBtn = el('button', 'btn-ghost btn-sm', '✏️ Destinazione'); eBtn.onclick = () => editDestination(q); act.appendChild(eBtn);
