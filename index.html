@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR Studio — il tuo generatore QR white-label</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="center">
+  <div class="auth-card">
+    <div class="logo">◵ QR Studio</div>
+    <p class="muted" style="margin:8px 0 0;font-size:14px">Crea il motorino QR della tua azienda. Dinamici, brandizzati, illimitati.</p>
+
+    <div class="tabs-auth">
+      <button id="tabLogin" class="active">Accedi</button>
+      <button id="tabSignup">Registrati</button>
+    </div>
+
+    <!-- LOGIN -->
+    <form id="loginForm">
+      <div class="field"><label>Email</label><input type="email" id="loginEmail" required></div>
+      <div class="field"><label>Password</label><input type="password" id="loginPass" required></div>
+      <button type="submit" style="width:100%">Accedi</button>
+      <div class="msg" id="loginMsg"></div>
+    </form>
+
+    <!-- SIGNUP -->
+    <form id="signupForm" class="hidden">
+      <div class="field"><label>Nome azienda</label><input type="text" id="suCompany" placeholder="Es. Acme Srl" required></div>
+      <div class="field"><label>Email</label><input type="email" id="suEmail" required></div>
+      <div class="field"><label>Password (min 6)</label><input type="password" id="suPass" minlength="6" required></div>
+      <button type="submit" style="width:100%">Crea il mio account</button>
+      <div class="msg" id="suMsg"></div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script>
+const sb = supabase.createClient(QR_CONFIG.SUPABASE_URL, QR_CONFIG.SUPABASE_ANON_KEY);
+const $ = id => document.getElementById(id);
+
+// redirect if already logged in
+sb.auth.getSession().then(({data})=>{ if(data.session) location.href='app.html'; });
+
+$('tabLogin').onclick=()=>{$('tabLogin').classList.add('active');$('tabSignup').classList.remove('active');
+  $('loginForm').classList.remove('hidden');$('signupForm').classList.add('hidden');};
+$('tabSignup').onclick=()=>{$('tabSignup').classList.add('active');$('tabLogin').classList.remove('active');
+  $('signupForm').classList.remove('hidden');$('loginForm').classList.add('hidden');};
+
+$('loginForm').onsubmit=async e=>{
+  e.preventDefault(); const m=$('loginMsg'); m.className='msg'; m.textContent='Accesso...';
+  const {error}=await sb.auth.signInWithPassword({email:$('loginEmail').value,password:$('loginPass').value});
+  if(error){m.className='msg err';m.textContent=error.message;return;}
+  location.href='app.html';
+};
+
+$('signupForm').onsubmit=async e=>{
+  e.preventDefault(); const m=$('suMsg'); m.className='msg'; m.textContent='Creazione account...';
+  const {data,error}=await sb.auth.signUp({
+    email:$('suEmail').value, password:$('suPass').value,
+    options:{ data:{ company_name:$('suCompany').value } }
+  });
+  if(error){m.className='msg err';m.textContent=error.message;return;}
+  if(data.session){ location.href='app.html'; }
+  else { m.className='msg ok'; m.textContent='Account creato! Controlla l\'email per confermare, poi accedi.'; }
+};
+</script>
+</body>
+</html>
