@@ -1,8 +1,8 @@
 # ◵ QR Studio — Generatore QR White-Label
 
-SaaS multi-tenant per creare QR code brandizzati. Ogni azienda che si registra ottiene il suo "motorino" QR: generazione illimitata, QR statici e **dinamici** (destinazione modificabile dopo la stampa) con **analytics di scansione**.
+SaaS multi-tenant per creare QR code brandizzati. Ogni azienda che si registra ottiene il suo motore QR: generazione illimitata, QR statici e **dinamici** (destinazione modificabile dopo la stampa) con **analytics di scansione**.
 
-Frontend 100% statico (gira su **GitHub Pages**) + backend **Supabase** (auth, database, storage, edge function).
+Frontend statico + funzioni serverless **Vercel** (`/api`) + backend **Supabase** (auth, database, storage, edge function). I QR dinamici e i domini custom richiedono le funzioni Vercel: il deploy avviene su **Vercel**, non su GitHub Pages.
 
 ## Funzionalità
 - Registrazione/login per azienda — ogni tenant è isolato (Row Level Security)
