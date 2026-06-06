@@ -58,8 +58,8 @@
 ## TRACCIA G — Rilascio
 
 - [ ] **G1 🟠 Collaudo end-to-end** su dominio Vercel: registrazione → branding → QR dinamico → scansione reale → analytics → isolamento tenant.
-- [ ] **G2 🟢 Meta/OG/SEO** su index e app: title, description, favicon `◵`, og-image.
-- [ ] **G3 🟢 Commit + push** ad ogni traccia chiusa (un commit per traccia, messaggio descrittivo).
+- [x] **G2 🟢 Meta/OG/SEO** su index e app: title, description, favicon `◵`, og-image.
+- [x] **G3 🟢 Commit + push** ad ogni traccia chiusa (un commit per traccia, messaggio descrittivo).
 
 ---
 
