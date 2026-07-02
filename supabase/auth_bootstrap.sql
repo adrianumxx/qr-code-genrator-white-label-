@@ -207,6 +207,11 @@ begin
     new.email,
     new.raw_user_meta_data ->> 'company_name'
   );
+
+  if to_regprocedure('public.link_platform_admin_for_user(uuid,text)') is not null then
+    perform public.link_platform_admin_for_user(new.id, new.email);
+  end if;
+
   return new;
 end;
 $$;

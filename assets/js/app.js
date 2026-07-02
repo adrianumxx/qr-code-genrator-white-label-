@@ -42,9 +42,17 @@ async function boot() {
   const { data: br } = await sb.from('branding').select('*').eq('tenant_id', STATE.tenantId).maybeSingle();
   STATE.branding = br || {};
   $('tenantName').textContent = (br && br.company_name) ? br.company_name : 'Your company';
+  renderPlatformAdminLink();
   fillBrandingForm();
   renderDomain();
   renderTypeFields(); refreshQR();
+}
+
+async function renderPlatformAdminLink() {
+  const link = $('adminLink');
+  if (!link) return;
+  const { data, error } = await sb.rpc('is_platform_admin');
+  if (!error && data === true) link.classList.remove('hidden');
 }
 
 async function loadMembership() {
@@ -103,8 +111,8 @@ $('menuBtn').onclick = () => setDrawer(!$('side').classList.contains('open'));
 $('overlay').onclick = () => setDrawer(false);
 
 /* ---------- navigation ---------- */
-document.querySelectorAll('.nav').forEach(n => n.onclick = () => {
-  document.querySelectorAll('.nav').forEach(x => x.classList.remove('active'));
+document.querySelectorAll('.nav[data-page]').forEach(n => n.onclick = () => {
+  document.querySelectorAll('.nav[data-page]').forEach(x => x.classList.remove('active'));
   n.classList.add('active');
   const p = n.dataset.page;
   ['generate', 'codes', 'bulk', 'branding'].forEach(pg =>

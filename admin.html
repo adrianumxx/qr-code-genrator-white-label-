@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QR Studio — Admin</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='26' font-size='26'%3E%E2%97%B5%3C/text%3E%3C/svg%3E">
+<meta name="theme-color" content="#0A0A0F">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand logo">◵ QR Studio</div>
+    <a class="nav active" href="admin.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6v5c0 5 3.4 8.8 8 10 4.6-1.2 8-5 8-10V6l-8-3z"/><path d="M9 12l2 2 4-4"/></svg>
+      <span>Admin</span>
+    </a>
+    <a class="nav" href="app.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      <span>Workspace</span>
+    </a>
+    <div class="side-foot">
+      <div id="adminEmail" class="muted"></div>
+      <button class="btn-ghost btn-sm" id="logoutBtn" style="width:100%;margin-top:10px">Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <section id="adminGate">
+      <h1 class="page-title">Platform admin</h1>
+      <p class="page-sub">Loading access...</p>
+    </section>
+
+    <section id="adminDashboard" class="hidden">
+      <div class="topbar">
+        <div>
+          <h1 class="page-title">Platform admin</h1>
+          <p class="page-sub" style="margin:0">Global usage, traffic, and super admin access.</p>
+        </div>
+        <button class="btn-ghost btn-sm" id="refreshAdmin">Refresh</button>
+      </div>
+
+      <div id="statsGrid" class="cards"></div>
+
+      <div class="grid2" style="margin-top:22px">
+        <div class="panel">
+          <h3>Super admins</h3>
+          <div id="adminsList" class="empty" style="padding:24px">Loading...</div>
+        </div>
+
+        <div class="panel">
+          <h3>Invite super admin</h3>
+          <form id="inviteForm">
+            <div class="field">
+              <label>Email</label>
+              <input type="email" id="inviteEmail" placeholder="name@company.com" required>
+            </div>
+            <button type="submit" style="width:100%">Invite</button>
+            <div class="msg" id="inviteMsg"></div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toastRoot"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/admin.js"></script>
+</body>
+</html>
