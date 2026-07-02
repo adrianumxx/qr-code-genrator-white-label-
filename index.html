@@ -30,6 +30,7 @@
       <div class="field"><label>Email</label><input type="email" id="loginEmail" required></div>
       <div class="field"><label>Password</label><input type="password" id="loginPass" required></div>
       <button type="submit" style="width:100%">Sign in</button>
+      <button type="button" id="resendLogin" class="btn-ghost hidden" style="width:100%;margin-top:8px">Resend confirmation email</button>
       <div class="msg" id="loginMsg"></div>
     </form>
 
@@ -39,6 +40,7 @@
       <div class="field"><label>Email</label><input type="email" id="suEmail" required></div>
       <div class="field"><label>Password (min 6)</label><input type="password" id="suPass" minlength="6" required></div>
       <button type="submit" style="width:100%">Create my account</button>
+      <button type="button" id="resendSignup" class="btn-ghost hidden" style="width:100%;margin-top:8px">Resend confirmation email</button>
       <div class="msg" id="suMsg"></div>
     </form>
   </div>
@@ -49,33 +51,98 @@
 <script>
 const sb = supabase.createClient(QR_CONFIG.SUPABASE_URL, QR_CONFIG.SUPABASE_ANON_KEY);
 const $ = id => document.getElementById(id);
+const redirectTo = `${location.origin}/index.html`;
+let lastSignupEmail = '';
 
 // redirect if already logged in
 sb.auth.getSession().then(({data})=>{ if(data.session) location.href='app.html'; });
 
-$('tabLogin').onclick=()=>{$('tabLogin').classList.add('active');$('tabSignup').classList.remove('active');
-  $('loginForm').classList.remove('hidden');$('signupForm').classList.add('hidden');};
-$('tabSignup').onclick=()=>{$('tabSignup').classList.add('active');$('tabLogin').classList.remove('active');
-  $('signupForm').classList.remove('hidden');$('loginForm').classList.add('hidden');};
+function showMsg(id, text, ok = false) {
+  const m = $(id); m.className = ok ? 'msg ok' : 'msg err'; m.textContent = text;
+}
+
+async function busy(btn, label, fn) {
+  if (!btn || btn.disabled) return;
+  const prev = btn.textContent; btn.disabled = true; btn.textContent = label;
+  try { return await fn(); }
+  finally { btn.disabled = false; btn.textContent = prev; }
+}
+
+function authMessage(error) {
+  const msg = (error && error.message ? error.message : '').toLowerCase();
+  if (msg.includes('email not confirmed') || msg.includes('not confirmed')) {
+    return 'Email not confirmed yet. Check your inbox or resend the confirmation email.';
+  }
+  if (msg.includes('invalid login') || msg.includes('invalid credentials')) {
+    return 'Email or password is not correct.';
+  }
+  if (msg.includes('already registered') || msg.includes('already exists')) {
+    return 'This email is already registered. Sign in or resend the confirmation email.';
+  }
+  if (msg.includes('rate limit') || msg.includes('too many')) {
+    return 'Too many attempts. Wait a moment, then try again.';
+  }
+  return error && error.message ? error.message : 'Authentication failed. Please try again.';
+}
+
+function showLogin() {
+  $('tabLogin').classList.add('active'); $('tabSignup').classList.remove('active');
+  $('loginForm').classList.remove('hidden'); $('signupForm').classList.add('hidden');
+}
+
+function showSignup() {
+  $('tabSignup').classList.add('active'); $('tabLogin').classList.remove('active');
+  $('signupForm').classList.remove('hidden'); $('loginForm').classList.add('hidden');
+}
+
+$('tabLogin').onclick = showLogin;
+$('tabSignup').onclick = showSignup;
 
 $('loginForm').onsubmit=async e=>{
-  e.preventDefault(); const m=$('loginMsg'); m.className='msg'; m.textContent='Signing in...';
-  const {error}=await sb.auth.signInWithPassword({email:$('loginEmail').value,password:$('loginPass').value});
-  if(error){m.className='msg err';m.textContent=error.message;return;}
-  location.href='app.html';
+  e.preventDefault(); const btn=e.submitter; const m=$('loginMsg'); m.className='msg'; m.textContent='Signing in...';
+  return busy(btn, 'Signing in...', async () => {
+    const email = $('loginEmail').value.trim();
+    const {error}=await sb.auth.signInWithPassword({email,password:$('loginPass').value});
+    if(error){
+      if ((error.message || '').toLowerCase().includes('confirm')) {
+        lastSignupEmail = email; $('suEmail').value = email; $('resendLogin').classList.remove('hidden');
+      }
+      showMsg('loginMsg', authMessage(error)); return;
+    }
+    location.href='app.html';
+  });
 };
 
 $('signupForm').onsubmit=async e=>{
-  e.preventDefault(); const m=$('suMsg'); m.className='msg'; m.textContent='Creating account...';
-  const {data,error}=await sb.auth.signUp({
-    email:$('suEmail').value, password:$('suPass').value,
-    options:{ data:{ company_name:$('suCompany').value },
-      emailRedirectTo: location.origin + location.pathname }
+  e.preventDefault(); const btn=e.submitter; const m=$('suMsg'); m.className='msg'; m.textContent='Creating account...';
+  return busy(btn, 'Creating account...', async () => {
+    const email = $('suEmail').value.trim();
+    const company = $('suCompany').value.trim();
+    lastSignupEmail = email;
+    const {data,error}=await sb.auth.signUp({
+      email, password:$('suPass').value,
+      options:{ data:{ company_name: company }, emailRedirectTo: redirectTo }
+    });
+    if(error){ $('resendSignup').classList.remove('hidden'); showMsg('suMsg', authMessage(error)); return; }
+    if(data.session){ location.href='app.html'; return; }
+    $('resendSignup').classList.remove('hidden');
+    m.className='msg ok';
+    m.textContent='Account request accepted. Check your email, confirm the account, then sign in.';
   });
-  if(error){m.className='msg err';m.textContent=error.message;return;}
-  if(data.session){ location.href='app.html'; }
-  else { m.className='msg ok'; m.textContent='Account created! Check your email to confirm, then sign in.'; }
 };
+
+async function resendConfirmation(btn, msgId) {
+  const email = ($('suEmail').value || lastSignupEmail || $('loginEmail').value).trim();
+  if (!email) { showMsg(msgId, 'Enter your email first.'); return; }
+  return busy(btn, 'Sending...', async () => {
+    const { error } = await sb.auth.resend({ type: 'signup', email, options: { emailRedirectTo: redirectTo } });
+    if (error) { showMsg(msgId, authMessage(error)); return; }
+    showMsg(msgId, 'Confirmation email sent. Check your inbox and spam folder.', true);
+  });
+}
+
+$('resendLogin').onclick = function () { return resendConfirmation(this, 'loginMsg'); };
+$('resendSignup').onclick = function () { return resendConfirmation(this, 'suMsg'); };
 </script>
 </body>
 </html>

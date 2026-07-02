@@ -35,8 +35,8 @@ async function boot() {
   STATE.user = data.session.user;
   $('userEmail').textContent = STATE.user.email;
 
-  const { data: mem } = await sb.from('memberships').select('tenant_id').limit(1).maybeSingle();
-  if (!mem) { toast('No company found', false); return; }
+  const mem = await loadMembership();
+  if (!mem) return;
   STATE.tenantId = mem.tenant_id;
 
   const { data: br } = await sb.from('branding').select('*').eq('tenant_id', STATE.tenantId).maybeSingle();
@@ -45,6 +45,43 @@ async function boot() {
   fillBrandingForm();
   renderDomain();
   renderTypeFields(); refreshQR();
+}
+
+async function loadMembership() {
+  const readMembership = () => sb.from('memberships').select('tenant_id').limit(1).maybeSingle();
+  let { data: mem, error } = await readMembership();
+  if (error) { showWorkspaceSetupError(error.message); return null; }
+  if (mem) return mem;
+
+  const { error: setupError } = await sb.rpc('ensure_user_tenant');
+  if (setupError) { showWorkspaceSetupError(setupError.message); return null; }
+
+  ({ data: mem, error } = await readMembership());
+  if (error || !mem) {
+    showWorkspaceSetupError(error ? error.message : 'Workspace setup is still incomplete.');
+    return null;
+  }
+  return mem;
+}
+
+function showWorkspaceSetupError(detail) {
+  $('tenantName').textContent = 'Workspace setup incomplete';
+  document.querySelector('.main').innerHTML = `
+    <section>
+      <h1 class="page-title">Workspace setup incomplete</h1>
+      <p class="page-sub">Your account is authenticated, but the company workspace was not created yet.</p>
+      <div class="panel" style="max-width:640px">
+        <h3>Account recovery</h3>
+        <p class="muted" style="font-size:14px;margin-top:0">
+          Try the setup again. If it keeps failing, apply the Supabase auth bootstrap SQL and then retry.
+        </p>
+        <button id="retrySetup">Retry setup</button>
+        <button class="btn-ghost" id="setupLogout" style="margin-left:8px">Sign out</button>
+        <div class="msg err">${escapeHtml(detail || 'Account created, workspace setup incomplete.')}</div>
+      </div>
+    </section>`;
+  $('retrySetup').onclick = () => location.reload();
+  $('setupLogout').onclick = async () => { await sb.auth.signOut(); location.href = 'index.html'; };
 }
 
 /* base url for dynamic links: verified custom domain, else current origin (Vercel) */
