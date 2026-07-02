@@ -32,6 +32,7 @@ Il file `assets/js/config.js` contiene URL e chiave pubblica Supabase (sicura la
 - Storage: `logos`, `files`
 - Edge function `r`: redirect+scan (fallback, sempre attiva)
 - Trigger: alla registrazione crea automaticamente tenant + membership + branding
+- Auth bootstrap SQL: applica `supabase/auth_bootstrap.sql` nel SQL Editor Supabase per creare/riparare automaticamente il workspace utente.
 
 ## Funzioni Vercel
 - `/api/r/[code]` — redirect + tracking scansioni (usata dal dominio Vercel e dai domini custom)
