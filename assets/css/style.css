@@ -163,6 +163,41 @@ label{font-size:13px;color:var(--muted);display:block;margin:0 0 6px;font-weight
   padding:14px 18px;border-radius:var(--radius);z-index:99;box-shadow:var(--shadow-lg);
   border-left:3px solid var(--brand);animation:toastIn .35s var(--ease-spring)}
 @keyframes toastIn{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+
+/* admin analytics */
+.admin-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:22px}
+.admin-kpi{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:14px;padding:20px;
+  background:linear-gradient(180deg,rgba(24,24,31,.98),rgba(15,15,20,.98));box-shadow:var(--shadow-md)}
+.admin-kpi::before{content:'';position:absolute;inset:0 0 auto;height:3px;background:#64748b}
+.admin-kpi.blue::before{background:#38bdf8}.admin-kpi.green::before{background:#22c55e}
+.admin-kpi.pink::before{background:#ff385c}.admin-kpi.neutral::before{background:#a3a3a3}
+.admin-kpi-label{font-family:var(--font-mono);font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.admin-kpi-value{font-family:var(--font-display);font-size:38px;line-height:1.1;font-weight:700;margin-top:14px}
+.admin-kpi-meta{color:var(--muted);font-size:13px;margin-top:6px}
+.admin-analytics{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(320px,.75fr);gap:22px;margin-top:22px}
+.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.panel-head h3{margin:0}.panel-head .muted{font-size:12px}
+.spark-bars{display:grid;grid-template-columns:repeat(14,minmax(24px,1fr));gap:10px;align-items:end;min-height:250px}
+.spark-col{display:grid;grid-template-rows:22px 1fr 18px;gap:8px;min-width:0}
+.spark-value{font-family:var(--font-mono);font-size:11px;color:var(--muted);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.spark-track{height:180px;border-radius:9px;background:rgba(255,255,255,.045);display:flex;align-items:end;overflow:hidden}
+.spark-track span{display:block;width:100%;border-radius:9px 9px 0 0;
+  background:linear-gradient(180deg,#38bdf8,#6366f1);min-height:5px}
+.spark-label{font-size:11px;color:var(--faint);text-align:center}
+.health-list{display:flex;flex-direction:column;gap:14px}
+.mini-section{font-family:var(--font-mono);font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.progress-row{display:flex;flex-direction:column;gap:7px}
+.progress-top{display:flex;justify-content:space-between;gap:12px;font-size:13px}
+.progress-top span{color:var(--muted);font-family:var(--font-mono)}
+.progress-bar{height:8px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden}
+.progress-bar span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,#22c55e,#38bdf8)}
+.leaderboard{display:flex;flex-direction:column;gap:10px}
+.leader-row{display:grid;grid-template-columns:34px 1fr auto;gap:12px;align-items:center;padding:13px 14px;
+  border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025)}
+.leader-rank{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:var(--panel2);
+  color:var(--muted);font-family:var(--font-mono);font-size:12px}
+.leader-score{text-align:right;font-family:var(--font-display);font-size:22px;font-weight:700}
+.leader-score span{display:block;font-family:var(--font-body);font-size:11px;color:var(--muted);font-weight:500}
 /* ===== mobile-first: topbar + drawer (nascosti su desktop) ===== */
 .mobile-bar{display:none}
 .overlay{display:none}
@@ -196,6 +231,10 @@ label{font-size:13px;color:var(--muted);display:block;margin:0 0 6px;font-weight
   .row{flex-direction:column;gap:0}
   .stat-grid{grid-template-columns:1fr;gap:10px}
   .cards{grid-template-columns:1fr;gap:14px}
+  .admin-summary{grid-template-columns:1fr;gap:12px}
+  .admin-analytics{grid-template-columns:1fr;gap:16px}
+  .spark-bars{gap:6px;overflow-x:auto;padding-bottom:4px}
+  .spark-col{min-width:34px}
   .panel{padding:18px}
   .modal{padding:20px;border-radius:var(--radius)}
   .toast{left:16px;right:16px;bottom:16px}

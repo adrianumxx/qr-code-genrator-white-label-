@@ -44,7 +44,34 @@
         <button class="btn-ghost btn-sm" id="refreshAdmin">Refresh</button>
       </div>
 
-      <div id="statsGrid" class="cards"></div>
+      <div id="adminSummary" class="admin-summary"></div>
+
+      <div class="admin-analytics">
+        <div class="panel admin-chart-panel">
+          <div class="panel-head">
+            <h3>Traffic trend</h3>
+            <span class="muted" id="trafficHint">Last 14 days</span>
+          </div>
+          <div id="trafficChart" class="spark-bars"></div>
+        </div>
+
+        <div class="panel">
+          <h3>Platform health</h3>
+          <div id="healthPanel" class="health-list"></div>
+        </div>
+      </div>
+
+      <div class="admin-analytics">
+        <div class="panel">
+          <h3>Tenant leaderboard</h3>
+          <div id="tenantLeaderboard" class="leaderboard"></div>
+        </div>
+
+        <div class="panel">
+          <h3>Traffic mix</h3>
+          <div id="trafficMix" class="health-list"></div>
+        </div>
+      </div>
 
       <div class="grid2" style="margin-top:22px">
         <div class="panel">
