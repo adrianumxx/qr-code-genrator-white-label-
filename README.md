@@ -15,6 +15,7 @@ Frontend statico + funzioni serverless **Vercel** (`/api`) + backend **Supabase*
 - **Analytics**: totali, ultimi 7 giorni, grafico nel tempo, dispositivi, paesi
 - **Branding aziendale**: logo + palette salvati e applicati ai QR
 - **Bulk da CSV**: genera molti QR in uno ZIP (anche dinamici)
+- **Super admin**: console `admin.html` per statistiche globali e inviti ad altri super admin.
 - **Domini personalizzati per cliente** (es. `qr.acme.com`) via Vercel — HTTPS automatico. Vedi `DOMINI_CUSTOM_VERCEL.md`
 
 ## Deploy: GitHub → Vercel
