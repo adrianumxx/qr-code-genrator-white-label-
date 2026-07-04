@@ -445,7 +445,7 @@ async function loadCodes() {
     const card = el('div', 'card');
     const thumb = el('div', 'qrthumb'); card.appendChild(thumb);
     const thumbDesign = { ...(q.design || currentDesign()), transparent: false };
-    new QRCodeStyling({ ...qrOptions(q.content || ' ', thumbDesign, 360), type: 'canvas' }).append(thumb);
+    new QRCodeStyling(qrOptions(q.content || ' ', thumbDesign, 150)).append(thumb);
     thumb.title = 'Open larger preview';
     thumb.tabIndex = 0;
     thumb.setAttribute('role', 'button');
@@ -492,7 +492,7 @@ function showLargeQR(q) {
   $('modalRoot').querySelector('.modal').classList.add('modal-qr');
   const stage = $('largeQrStage');
   const viewerDesign = { ...(q.design || currentDesign()), transparent: false, margin: 26 };
-  new QRCodeStyling({ ...qrOptions(q.content || ' ', viewerDesign, 1024), type: 'canvas' }).append(stage);
+  new QRCodeStyling(qrOptions(q.content || ' ', viewerDesign, 460)).append(stage);
   $('largeQrDownload').onclick = () => downloadQR(q.content, q.design || currentDesign(), q.title, 'png', 1024, 'download');
 }
 
