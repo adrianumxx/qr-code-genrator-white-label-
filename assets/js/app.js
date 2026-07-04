@@ -473,6 +473,7 @@ async function loadCodes() {
 
 function showLargeQR(q) {
   openModal(`
+    <div class="qr-viewer">
     <h3 style="margin-top:0">${escapeHtml(q.title || 'QR code')}</h3>
     <div id="largeQrStage" class="large-qr-stage"></div>
     <div class="large-qr-meta">
@@ -482,8 +483,17 @@ function showLargeQR(q) {
     <div class="row" style="margin-top:16px">
       <button class="btn-ghost" onclick="closeModal()">Close</button>
       <button id="largeQrDownload">Download PNG</button>
+    </div>
     </div>`);
-  new QRCodeStyling(qrOptions(q.content || ' ', q.design || currentDesign(), 360)).append($('largeQrStage'));
+  $('modalRoot').querySelector('.modal').classList.add('modal-qr');
+  const stage = $('largeQrStage');
+  const size = Math.min(420, Math.max(280, window.innerWidth - 92));
+  new QRCodeStyling(qrOptions(q.content || ' ', q.design || currentDesign(), size)).append(stage);
+  const rendered = stage.firstElementChild;
+  if (rendered) {
+    rendered.style.width = '100%';
+    rendered.style.height = '100%';
+  }
   $('largeQrDownload').onclick = () => downloadQR(q.content, q.design || currentDesign(), q.title, 'png', 1024, 'download');
 }
 
