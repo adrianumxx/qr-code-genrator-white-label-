@@ -444,7 +444,8 @@ async function loadCodes() {
   data.forEach(q => {
     const card = el('div', 'card');
     const thumb = el('div', 'qrthumb'); card.appendChild(thumb);
-    new QRCodeStyling(qrOptions(q.content || ' ', q.design || currentDesign(), 150)).append(thumb);
+    const thumbDesign = { ...(q.design || currentDesign()), transparent: false };
+    new QRCodeStyling({ ...qrOptions(q.content || ' ', thumbDesign, 360), type: 'canvas' }).append(thumb);
     thumb.title = 'Open larger preview';
     thumb.tabIndex = 0;
     thumb.setAttribute('role', 'button');
