@@ -161,6 +161,7 @@ function renderTypeFields() {
   });
   // dynamic available for url and file
   $('g_dynamic').closest('.field').style.display = isDynable(type) ? '' : 'none';
+  if (type === 'url') $('g_dynamic').checked = true;
   if (!isDynable(type)) $('g_dynamic').checked = false;
   wrap.querySelectorAll('input,textarea').forEach(i => i.oninput = refreshQR);
 }
@@ -463,7 +464,9 @@ async function loadCodes() {
     const dlBtn = el('button', 'btn-ghost btn-sm', 'Download'); dlBtn.onclick = () => downloadSavedQR(q); act.appendChild(dlBtn);
     if (q.is_dynamic) {
       const aBtn = el('button', 'btn-ghost btn-sm', 'Analytics'); aBtn.onclick = () => showAnalytics(q); act.appendChild(aBtn);
-      const eBtn = el('button', 'btn-ghost btn-sm', 'Destination'); eBtn.onclick = () => editDestination(q); act.appendChild(eBtn);
+      const eBtn = el('button', 'btn-ghost btn-sm', 'Edit link'); eBtn.onclick = () => editDestination(q); act.appendChild(eBtn);
+    } else if (q.type === 'url') {
+      const eBtn = el('button', 'btn-ghost btn-sm', 'Edit link'); eBtn.onclick = () => editStaticLink(q); act.appendChild(eBtn);
     }
     const dBtn = el('button', 'btn-danger btn-sm', 'Delete'); dBtn.onclick = () => deleteQR(q.id); act.appendChild(dBtn);
     card.appendChild(act);
@@ -512,6 +515,25 @@ function editDestination(q) {
     const { error } = await sb.from('qr_codes').update({ destination: next }).eq('id', q.id);
     if (error) return toast(error.message, false);
     closeModal(); toast('Destination updated ✓');
+    loadCodes();
+  };
+}
+
+function editStaticLink(q) {
+  openModal(`
+    <h3 style="margin-top:0">Edit link</h3>
+    <p class="muted" style="font-size:13px">
+      This is a static QR. Updating it changes the saved QR in this dashboard, but already downloaded or printed copies must be downloaded again.
+    </p>
+    <div class="field"><label>URL</label><input id="newStaticLink" value="${escapeHtml(q.content || '')}"></div>
+    <div class="row"><button class="btn-ghost" onclick="closeModal()">Cancel</button>
+    <button id="saveStaticLink">Save</button></div>`);
+  $('saveStaticLink').onclick = async () => {
+    const next = normalizeUrl($('newStaticLink').value);
+    if (!isUrl(next)) { toast('Invalid URL', false); return; }
+    const { error } = await sb.from('qr_codes').update({ content: next }).eq('id', q.id);
+    if (error) return toast(error.message, false);
+    closeModal(); toast('Link updated. Download the QR again.');
     loadCodes();
   };
 }
