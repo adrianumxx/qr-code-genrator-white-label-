@@ -484,16 +484,11 @@ function showLargeQR(q) {
       <button class="btn-ghost" onclick="closeModal()">Close</button>
       <button id="largeQrDownload">Download PNG</button>
     </div>
-    </div>`);
+  </div>`);
   $('modalRoot').querySelector('.modal').classList.add('modal-qr');
   const stage = $('largeQrStage');
-  const size = Math.min(420, Math.max(280, window.innerWidth - 92));
-  new QRCodeStyling(qrOptions(q.content || ' ', q.design || currentDesign(), size)).append(stage);
-  const rendered = stage.firstElementChild;
-  if (rendered) {
-    rendered.style.width = '100%';
-    rendered.style.height = '100%';
-  }
+  const viewerDesign = { ...(q.design || currentDesign()), transparent: false, margin: 26 };
+  new QRCodeStyling({ ...qrOptions(q.content || ' ', viewerDesign, 1024), type: 'canvas' }).append(stage);
   $('largeQrDownload').onclick = () => downloadQR(q.content, q.design || currentDesign(), q.title, 'png', 1024, 'download');
 }
 
