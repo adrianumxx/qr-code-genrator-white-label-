@@ -444,6 +444,17 @@ async function loadCodes() {
     const card = el('div', 'card');
     const thumb = el('div', 'qrthumb'); card.appendChild(thumb);
     new QRCodeStyling(qrOptions(q.content || ' ', q.design || currentDesign(), 150)).append(thumb);
+    thumb.title = 'Open larger preview';
+    thumb.tabIndex = 0;
+    thumb.setAttribute('role', 'button');
+    thumb.setAttribute('aria-label', `Open ${q.title || 'QR code'} larger preview`);
+    thumb.onclick = () => showLargeQR(q);
+    thumb.onkeydown = e => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        showLargeQR(q);
+      }
+    };
     card.appendChild(el('div', null,
       `<h4>${escapeHtml(q.title)}</h4>
        <span class="badge ${q.is_dynamic ? 'dyn' : 'stat'}">${q.is_dynamic ? 'Dynamic' : 'Static'}</span>
@@ -458,6 +469,22 @@ async function loadCodes() {
     card.appendChild(act);
     list.appendChild(card);
   });
+}
+
+function showLargeQR(q) {
+  openModal(`
+    <h3 style="margin-top:0">${escapeHtml(q.title || 'QR code')}</h3>
+    <div id="largeQrStage" class="large-qr-stage"></div>
+    <div class="large-qr-meta">
+      <span class="badge ${q.is_dynamic ? 'dyn' : 'stat'}">${q.is_dynamic ? 'Dynamic' : 'Static'}</span>
+      <span class="muted">${escapeHtml(q.is_dynamic ? q.content : q.type)}</span>
+    </div>
+    <div class="row" style="margin-top:16px">
+      <button class="btn-ghost" onclick="closeModal()">Close</button>
+      <button id="largeQrDownload">Download PNG</button>
+    </div>`);
+  new QRCodeStyling(qrOptions(q.content || ' ', q.design || currentDesign(), 360)).append($('largeQrStage'));
+  $('largeQrDownload').onclick = () => downloadQR(q.content, q.design || currentDesign(), q.title, 'png', 1024, 'download');
 }
 
 async function deleteQR(id) {
