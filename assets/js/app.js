@@ -276,12 +276,12 @@ $('applyBrandBtn').onclick = () => {
 };
 
 /* ===================== EXPORT ===================== */
-/* the payload currently shown in preview (static or dynamic placeholder) */
+/* the payload currently shown in preview. Dynamic QR exports must use a saved short code. */
 function currentQRData() {
   const dyn = $('g_dynamic').checked && isDynable($('g_type').value);
   const payload = buildPayload();
   if (!payload && !dyn) return null;
-  return dyn ? `${redirectBase()}/PREVIEW` : payload;
+  return dyn ? null : payload;
 }
 
 /* save a blob.
@@ -321,7 +321,17 @@ async function downloadQR(data, design, title, ext, size = 1024, mode = 'downloa
   } catch (e) { toast('Export error: ' + (e.message || e), false); }
 }
 
-function exportQR(ext, mode = 'download') {
+async function exportQR(ext, mode = 'download') {
+  const dyn = $('g_dynamic').checked && isDynable($('g_type').value);
+
+  if (dyn) {
+    const saved = await saveCurrentQr({ silent: true });
+    if (!saved) return;
+    toast('Dynamic QR saved. Downloading final code...');
+    if (document.querySelector('.nav[data-page="codes"]').classList.contains('active')) loadCodes();
+    return downloadQR(saved.content, saved.design || currentDesign(), saved.title, ext, +$('dl_size').value, mode);
+  }
+
   const data = currentQRData();
   if (!data) { toast('Enter content before downloading', false); return; }
   return downloadQR(data, currentDesign(), $('g_title').value, ext, +$('dl_size').value, mode);
@@ -366,6 +376,13 @@ function randCode(n = 7) {
 }
 
 $('saveQrBtn').onclick = function () {
+  return busy(this, 'Saving...', async () => {
+    const saved = await saveCurrentQr();
+    if (saved && saved.is_dynamic) loadCodes();
+  });
+};
+
+async function saveCurrentQr({ silent = false } = {}) {
   const type = $('g_type').value;
   const dyn = $('g_dynamic').checked && isDynable(type);
   const payload = buildPayload();
@@ -384,13 +401,24 @@ $('saveQrBtn').onclick = function () {
   if (dyn) { row.short_code = randCode(); row.destination = normalizeUrl(payload); row.content = `${redirectBase()}/${row.short_code}`; }
   else { row.content = payload; }
 
-  return busy(this, 'Saving…', async () => {
-    const { error } = await sb.from('qr_codes').insert(row);
-    if (error) { toast(error.message, false); return; }
-    toast('QR saved ✓');
-    if (dyn) loadCodes();
-  });
-};
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data, error } = await sb.from('qr_codes').insert(row).select('*').single();
+    if (!error) {
+      if (!silent) toast('QR saved');
+      return data;
+    }
+    if (dyn && error.code === '23505') {
+      row.short_code = randCode();
+      row.content = `${redirectBase()}/${row.short_code}`;
+      continue;
+    }
+    toast(error.message, false);
+    return null;
+  }
+
+  toast('Could not create a unique QR link. Try again.', false);
+  return null;
+}
 
 /* ===================== CODES LIST ===================== */
 async function loadCodes() {
