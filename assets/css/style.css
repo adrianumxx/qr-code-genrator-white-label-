@@ -137,9 +137,12 @@ label{font-size:13px;color:var(--muted);display:block;margin:0 0 6px;font-weight
   box-shadow:var(--shadow-sm);transition:transform var(--dur) var(--ease-out),
   box-shadow var(--dur) var(--ease-out),border-color var(--dur) var(--ease-out)}
 .card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:var(--line-hover)}
-.card .qrthumb{background:#fff;border-radius:10px;padding:10px;text-align:center;margin-bottom:12px}
+.card .qrthumb{height:176px;background:#fff;border-radius:10px;padding:14px;text-align:center;margin-bottom:12px;
+  display:flex;align-items:center;justify-content:center;overflow:hidden}
 .card .qrthumb{cursor:zoom-in;transition:transform var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out)}
 .card .qrthumb:hover,.card .qrthumb:focus-visible{transform:scale(1.025);box-shadow:0 0 0 3px rgba(99,102,241,.22);outline:none}
+.card .qrthumb>*{display:block!important;width:148px!important;height:148px!important;max-width:148px!important;max-height:148px!important}
+.card .qrthumb canvas,.card .qrthumb svg{display:block!important;width:148px!important;height:148px!important}
 .card h4{margin:0 0 4px;font-size:15px}
 .badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:11px;
   padding:3px 10px;border-radius:var(--radius-full);font-weight:500;text-transform:uppercase;
