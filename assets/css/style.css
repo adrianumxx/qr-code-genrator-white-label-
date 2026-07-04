@@ -138,6 +138,8 @@ label{font-size:13px;color:var(--muted);display:block;margin:0 0 6px;font-weight
   box-shadow var(--dur) var(--ease-out),border-color var(--dur) var(--ease-out)}
 .card:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg);border-color:var(--line-hover)}
 .card .qrthumb{background:#fff;border-radius:10px;padding:10px;text-align:center;margin-bottom:12px}
+.card .qrthumb{cursor:zoom-in;transition:transform var(--dur) var(--ease-out),box-shadow var(--dur) var(--ease-out)}
+.card .qrthumb:hover,.card .qrthumb:focus-visible{transform:scale(1.025);box-shadow:0 0 0 3px rgba(99,102,241,.22);outline:none}
 .card h4{margin:0 0 4px;font-size:15px}
 .badge{display:inline-flex;align-items:center;gap:4px;font-family:var(--font-mono);font-size:11px;
   padding:3px 10px;border-radius:var(--radius-full);font-weight:500;text-transform:uppercase;
@@ -157,6 +159,10 @@ label{font-size:13px;color:var(--muted);display:block;margin:0 0 6px;font-weight
 .modal{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line-hover);border-radius:16px;
   padding:26px;width:100%;max-width:480px;box-shadow:var(--shadow-lg);
   animation:modalIn var(--dur) var(--ease-spring)}
+.large-qr-stage{background:#fff;border-radius:14px;padding:18px;display:grid;place-items:center;margin-top:14px}
+.large-qr-stage canvas,.large-qr-stage svg{width:min(360px,72vw)!important;height:min(360px,72vw)!important}
+.large-qr-meta{display:flex;align-items:center;gap:10px;margin-top:12px;min-width:0}
+.large-qr-meta .muted{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes modalIn{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--panel2);border:1px solid var(--line-hover);
