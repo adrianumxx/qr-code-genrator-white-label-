@@ -159,8 +159,12 @@ label{font-size:13px;color:var(--muted);display:block;margin:0 0 6px;font-weight
 .modal{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line-hover);border-radius:16px;
   padding:26px;width:100%;max-width:480px;box-shadow:var(--shadow-lg);
   animation:modalIn var(--dur) var(--ease-spring)}
-.large-qr-stage{background:#fff;border-radius:14px;padding:18px;display:grid;place-items:center;margin-top:14px}
-.large-qr-stage canvas,.large-qr-stage svg{width:min(360px,72vw)!important;height:min(360px,72vw)!important}
+.modal.modal-qr{max-width:540px}
+.qr-viewer{display:flex;flex-direction:column;align-items:stretch}
+.large-qr-stage{--qr-size:min(420px,calc(100vw - 92px));width:var(--qr-size);height:var(--qr-size);
+  background:#fff;border-radius:16px;padding:18px;display:flex;align-items:center;justify-content:center;margin:14px auto 0}
+.large-qr-stage>div{width:100%!important;height:100%!important;display:flex!important;align-items:center!important;justify-content:center!important}
+.large-qr-stage canvas,.large-qr-stage svg{display:block!important;width:100%!important;height:100%!important}
 .large-qr-meta{display:flex;align-items:center;gap:10px;margin-top:12px;min-width:0}
 .large-qr-meta .muted{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
